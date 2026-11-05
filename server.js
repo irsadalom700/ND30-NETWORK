@@ -1802,3 +1802,5 @@ app.listen(PORT, () => {
   console.log(`🔗 Integrations Hub: http://localhost:${PORT}/admin/integrations`);
   console.log(`====================================================`);
 });
+
+module.exports = app;
