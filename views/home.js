@@ -100,6 +100,9 @@ function renderHomePage(lang = 'as') {
             </div>
           </article>
         `).join('')}
+
+        <!-- Advertisement Section (Directly below the 2nd reference image cards) -->
+        ${renderAdSliderHtml(adSlides)}
       </div>
     </section>` : ''}
 
@@ -172,9 +175,6 @@ function renderHomePage(lang = 'as') {
           <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
           `}
         </div>` : ''}
-
-        <!-- Sidebar Advertisement Photo Slider (Replaces Multi-Channel Syndication) -->
-        ${renderAdSliderHtml(adSlides)}
       </aside>
     </div>
   </div>`;

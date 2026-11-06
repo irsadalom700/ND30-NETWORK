@@ -18,8 +18,8 @@ function renderAdSliderHtml(slides = []) {
   const activeSlides = (slides || []).filter(s => s.is_active === 1);
 
   return `
-  <!-- Sidebar Advertisement Photo Slider (Design matching Image 2) -->
-  <div class="sidebar-widget nd30-ad-slider-card">
+  <!-- Advertisement Photo Slider (Design matching Image 2) -->
+  <div class="nd30-ad-slider-card">
     <style>
       .nd30-ad-slider-card {
         background: #0d131f;
@@ -27,7 +27,7 @@ function renderAdSliderHtml(slides = []) {
         border-radius: 12px;
         padding: 14px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-        margin-bottom: 24px;
+        margin: 0;
         position: relative;
         overflow: hidden;
       }
@@ -279,3 +279,4 @@ function renderAdSliderHtml(slides = []) {
 module.exports = {
   renderAdSliderHtml
 };
+
