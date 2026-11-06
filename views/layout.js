@@ -41,6 +41,7 @@ function renderLayout({
   // Get active AdSense slots
   const headerAd = db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'header_leaderboard' AND is_active = 1").get();
   const footerAd = db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'footer_banner' AND is_active = 1").get();
+  const anyAd = db.prepare("SELECT ad_client FROM adsense_slots WHERE is_active = 1 LIMIT 1").get();
 
   // Get Analytics
   const analytics = db.prepare('SELECT * FROM analytics_settings WHERE id = 1 AND is_active = 1').get();
@@ -119,8 +120,8 @@ function renderLayout({
   </script>` : ''}
 
   <!-- Google AdSense Script (Configurable) -->
-  ${(headerAd || footerAd) ? `
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${(headerAd?.ad_client || 'ca-pub-9876543210123456')}" crossorigin="anonymous"></script>
+  ${anyAd ? `
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${(anyAd.ad_client || 'ca-pub-9876543210123456')}" crossorigin="anonymous"></script>
   ` : ''}
 
   <link rel="stylesheet" href="/css/style.css">

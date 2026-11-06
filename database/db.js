@@ -761,8 +761,20 @@ function initDatabase() {
     insertAd.run('header_leaderboard', 'Top Header Leaderboard (728x90)', 'ca-pub-9876543210123456', '8812390192', 'horizontal', 1, '');
     insertAd.run('in_article_top', 'In-Article Inline Ad (Responsive)', 'ca-pub-9876543210123456', '9923847102', 'fluid', 1, '');
     insertAd.run('sidebar_rectangle', 'Sidebar Sticky Medium Rectangle (300x250)', 'ca-pub-9876543210123456', '5512093847', 'rectangle', 1, '');
+    insertAd.run('hero_secondary_adsense', 'Homepage Hero Stack Ad Unit (300x250 Medium Rectangle)', 'ca-pub-9876543210123456', '5512093848', 'rectangle', 1, '');
     insertAd.run('footer_banner', 'Footer Wide Billboard (970x250)', 'ca-pub-9876543210123456', '4410293845', 'horizontal', 1, '');
   }
+
+  // Ensure hero_secondary_adsense slot exists for existing databases
+  try {
+    const existingHeroSlot = db.prepare("SELECT id FROM adsense_slots WHERE slot_key = 'hero_secondary_adsense'").get();
+    if (!existingHeroSlot) {
+      db.prepare(`
+        INSERT INTO adsense_slots (slot_key, slot_name, ad_client, ad_slot_id, ad_format, is_active, custom_html)
+        VALUES ('hero_secondary_adsense', 'Homepage Hero Stack Ad Unit (300x250 Medium Rectangle)', 'ca-pub-9876543210123456', '5512093848', 'rectangle', 1, '')
+      `).run();
+    }
+  } catch (e) {}
 
   // Seed Analytics
   const anaCount = db.prepare('SELECT COUNT(*) as count FROM analytics_settings').get().count;

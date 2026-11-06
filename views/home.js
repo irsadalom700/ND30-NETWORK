@@ -40,7 +40,9 @@ function renderHomePage(lang = 'as') {
     LIMIT 5
   `).all(currentLang);
 
-  // Get active AdSense sidebar unit
+  // Get active AdSense units
+  const heroAd = db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'hero_secondary_adsense' AND is_active = 1").get()
+    || db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'sidebar_rectangle' AND is_active = 1").get();
   const sidebarAd = db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'sidebar_rectangle' AND is_active = 1").get();
 
   const heroPrimary = featuredArticles[0] || latestArticles[0];
@@ -101,8 +103,19 @@ function renderHomePage(lang = 'as') {
           </article>
         `).join('')}
 
-        <!-- Advertisement Section (Directly below the 2nd reference image cards) -->
-        ${renderAdSliderHtml(adSlides)}
+        <!-- Google AdSense Placement (Replaces previous photo slider) -->
+        <div class="ad-slot-container" style="background:#0d131f; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:12px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.35); overflow:hidden;">
+          <span class="ad-label" style="display:block; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:8px; font-weight:700;">Advertisement • Google AdSense</span>
+          ${heroAd && heroAd.custom_html ? heroAd.custom_html : `
+          <ins class="adsbygoogle"
+               style="display:inline-block;width:300px;height:250px"
+               data-ad-client="${heroAd ? heroAd.ad_client : 'ca-pub-9876543210123456'}"
+               data-ad-slot="${heroAd ? heroAd.ad_slot_id : '5512093848'}"
+               data-ad-format="rectangle"
+               data-full-width-responsive="true"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          `}
+        </div>
       </div>
     </section>` : ''}
 
