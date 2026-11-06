@@ -4,6 +4,54 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 0. Mobile Admin Sidebar Drawer Controller
+  const sidebar = document.getElementById('adminSidebar');
+  const toggleBtn = document.getElementById('adminSidebarToggleBtn');
+  const closeBtn = document.getElementById('adminSidebarCloseBtn');
+  const backdrop = document.getElementById('adminSidebarBackdrop');
+
+  function openSidebar() {
+    if (sidebar) sidebar.classList.add('open');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.classList.add('sidebar-open');
+  }
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('sidebar-open');
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openSidebar();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', closeSidebar);
+  }
+
+  // Auto-close when clicking any nav item on mobile
+  if (sidebar) {
+    const navItems = sidebar.querySelectorAll('.admin-nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          closeSidebar();
+        }
+      });
+    });
+  }
+
   // 1. Multilingual Tab Switching
   const langTabs = document.querySelectorAll('.editor-lang-tab');
   const langPanels = document.querySelectorAll('.editor-body-panel');

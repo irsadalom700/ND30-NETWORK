@@ -82,7 +82,7 @@ function renderSocialQrAdmin() {
       <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
         <span>➕</span> Add More Social QR Channel
       </h3>
-      <form id="addSocialLinkForm" onsubmit="handleCreateLink(event)" style="display: grid; grid-template-columns: 200px 1fr 1.6fr auto; gap: 14px; align-items: flex-end;">
+      <form id="addSocialLinkForm" class="admin-socialqr-form" onsubmit="handleCreateLink(event)" style="display: grid; grid-template-columns: 200px 1fr 1.6fr auto; gap: 14px; align-items: flex-end;">
         <div>
           <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Select Platform *</label>
           <select id="newPlatform" onchange="handlePlatformChange(this.value)" required style="width: 100%; background: #0f172a; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 10px 12px; font-size: 0.88rem; outline: none;">

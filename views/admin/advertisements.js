@@ -269,7 +269,7 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
       </div>
 
       <!-- Two column grid: Upload form + Live preview -->
-      <div style="display: grid; grid-template-columns: minmax(320px, 1.2fr) minmax(300px, 0.8fr); gap: 24px; margin-bottom: 32px; align-items: start;">
+      <div class="admin-ads-grid" style="display: grid; grid-template-columns: minmax(320px, 1.2fr) minmax(300px, 0.8fr); gap: 24px; margin-bottom: 32px; align-items: start;">
         
         <!-- Upload Form -->
         <div style="background: var(--admin-card-bg, #1e293b); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 22px;">
@@ -458,7 +458,7 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
 
     <!-- TAB 2: PROMOTION TYPES & CHARGES CONFIGURATION -->
     <div id="tabPricing" class="admin-tab-pane" style="display:none;">
-      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;">
+      <div class="admin-ads-grid" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;">
 
         <!-- List of Existing Promotion Types -->
         <div>
@@ -539,7 +539,7 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
 
     <!-- TAB 3: REGISTERED INFLUENCERS -->
     <div id="tabInfluencers" class="admin-tab-pane" style="display:none;">
-      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;">
+      <div class="admin-ads-grid" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;">
 
         <!-- Influencer List -->
         <div>

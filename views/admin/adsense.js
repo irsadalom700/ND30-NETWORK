@@ -33,7 +33,7 @@ function renderAdSenseManager() {
           </span>
         </div>
 
-        <form method="POST" action="/api/admin/adsense/save" style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:16px; align-items:flex-end;">
+        <form method="POST" action="/api/admin/adsense/save" class="admin-adsense-form" style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:16px; align-items:flex-end;">
           <input type="hidden" name="slotKey" value="${slot.slot_key}">
 
           <div>

@@ -91,7 +91,7 @@ function renderAdminDashboard() {
     </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: 1.8fr 1.2fr; gap:28px;">
+  <div class="admin-dashboard-grid" style="display:grid; grid-template-columns: 1.8fr 1.2fr; gap:28px;">
     <!-- Recent Articles Table -->
     <div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">

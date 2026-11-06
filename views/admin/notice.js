@@ -130,7 +130,7 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       <input type="hidden" name="id" value="${n.id}">
       <input type="hidden" name="is_active" id="isActiveInput" value="${n.is_active}">
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px;">
+      <div class="admin-notice-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px;">
         <!-- Column 1: Content & Small Photo -->
         <div style="background:var(--admin-card-bg); border:1px solid var(--admin-border); border-radius:12px; padding:22px;">
           <h2 style="font-size:1.1rem; font-weight:700; color:#ffffff; margin:0 0 16px 0; display:flex; align-items:center; gap:8px;">

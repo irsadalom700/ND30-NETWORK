@@ -35,7 +35,7 @@ function renderIftttStudio() {
   </div>
 
   <!-- Credentials & Webhook Setup Grid -->
-  <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:24px; margin-bottom:28px;">
+  <div class="admin-ifttt-grid" style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:24px; margin-bottom:28px;">
     <!-- Inbound & Outbound Configuration -->
     <div style="background:var(--admin-card); border:1px solid var(--admin-border); border-radius:12px; padding:22px;">
       <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
