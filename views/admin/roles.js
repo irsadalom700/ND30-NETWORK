@@ -25,6 +25,7 @@ const AVAILABLE_MODULES = [
   { slug: 'dashboard', name: 'Dashboard (Overview)', icon: '📊' },
   { slug: 'editor', name: '3-Language News Publisher', icon: '✍️' },
   { slug: 'articles', name: 'All News Articles', icon: '📄' },
+  { slug: 'notice', name: 'Notice Panel Studio', icon: '🔔' },
   { slug: 'facebook', name: 'Facebook Import Review', icon: '📱' },
   { slug: 'reporters', name: 'Join Us & Recruitment Areas', icon: '🎙️' },
   { slug: 'advertisements', name: 'Advertisements & Bookings', icon: '📢' },

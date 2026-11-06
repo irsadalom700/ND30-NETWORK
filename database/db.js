@@ -384,6 +384,29 @@ function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Frontend Notice Panel (Live banner with text styling, animations, small photo, and On/Off control)
+    CREATE TABLE IF NOT EXISTS frontend_notices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT DEFAULT '',
+      message TEXT NOT NULL,
+      image_url TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      link_text TEXT DEFAULT 'পঢ়ক / Read More',
+      badge_text TEXT DEFAULT 'জাননী / NOTICE',
+      badge_bg TEXT DEFAULT '#dc2626',
+      badge_color TEXT DEFAULT '#ffffff',
+      animation_type TEXT DEFAULT 'marquee',
+      bg_theme TEXT DEFAULT 'crimson-alert',
+      custom_bg TEXT DEFAULT '',
+      text_color TEXT DEFAULT '#ffffff',
+      font_size TEXT DEFAULT 'medium',
+      font_weight TEXT DEFAULT '600',
+      is_active INTEGER DEFAULT 1,
+      show_close_button INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Users & RBAC Table (Admin, Approved Editor, Promoter)
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -470,6 +493,34 @@ function initDatabase() {
     INSERT OR IGNORE INTO ad_system_settings (id, join_us_enabled, whatsapp_otp_enabled, whatsapp_notify_enabled)
     VALUES (1, 1, 0, 0)
   `).run();
+
+  // Seed default notice row in frontend_notices if empty
+  const noticeCount = db.prepare('SELECT COUNT(*) as count FROM frontend_notices').get().count;
+  if (noticeCount === 0) {
+    db.prepare(`
+      INSERT INTO frontend_notices (
+        title, message, image_url, link_url, link_text,
+        badge_text, badge_bg, badge_color, animation_type, bg_theme,
+        text_color, font_size, font_weight, is_active, show_close_button
+      ) VALUES (
+        'ND30 LIVE Official Notice',
+        'উত্তৰ-পূবৰ নিৰ্ভীক আৰু নিৰপেক্ষ সংবাদ মাধ্যম ND30 LIVE লৈ স্বাগতম! Welcome to ND30 LIVE Digital Portal.',
+        '/images/nd30_live_logo.png',
+        '/as/',
+        'অধিক পঢ়ক ➜',
+        '📢 বিশেষ জাননী',
+        '#dc2626',
+        '#ffffff',
+        'marquee',
+        'crimson-alert',
+        '#ffffff',
+        'medium',
+        '600',
+        1,
+        1
+      )
+    `).run();
+  }
 
   // Seed default promotion types for ND30 Live if empty
   const promoTypeCount = db.prepare('SELECT COUNT(*) as count FROM ad_promotion_types').get().count;

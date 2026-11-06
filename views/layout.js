@@ -8,6 +8,8 @@ const { renderReporterModal } = require('./reporterModal');
 const { renderAdvertisementModal } = require('./advertisementModal');
 const { renderHeaderSocialQrHtml } = require('../services/socialQrService');
 const { getAdvertisementSettings } = require('../services/advertisementService');
+const { renderNoticePanel } = require('./noticePanel');
+const { getActiveNotice } = require('../services/noticeService');
 
 function renderLayout({
   title,
@@ -42,6 +44,9 @@ function renderLayout({
 
   // Get Analytics
   const analytics = db.prepare('SELECT * FROM analytics_settings WHERE id = 1 AND is_active = 1').get();
+
+  // Get active Notice Panel (returns null if turned OFF)
+  const activeNotice = getActiveNotice();
 
   // Current Date display based on language
   const now = new Date();
@@ -241,6 +246,9 @@ function renderLayout({
       </div>
     </div>
   </section>` : ''}
+
+  <!-- Frontend Notice Panel (Live with On/Off State, Text Styling & 5 Animations) -->
+  ${renderNoticePanel(activeNotice)}
 
   <!-- Main Dynamic Page Content -->
   <main class="main-content">

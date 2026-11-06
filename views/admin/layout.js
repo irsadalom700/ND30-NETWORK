@@ -33,7 +33,7 @@ function renderAdminLayout({ title, activeNav = 'dashboard', content, currentUse
     </div>
 
     <nav class="admin-nav">
-      ${(canAccess('dashboard') || canAccess('editor') || canAccess('articles')) ? `
+      ${(canAccess('dashboard') || canAccess('editor') || canAccess('articles') || canAccess('notice')) ? `
       <span class="admin-nav-heading">Editorial & Publishing</span>
       ${canAccess('dashboard') ? `
       <a href="/admin" class="admin-nav-item ${activeNav === 'dashboard' ? 'active' : ''}">
@@ -46,6 +46,10 @@ function renderAdminLayout({ title, activeNav = 'dashboard', content, currentUse
       ${canAccess('articles') ? `
       <a href="/admin/articles" class="admin-nav-item ${activeNav === 'articles' ? 'active' : ''}">
         <span>📄</span> All Articles
+      </a>` : ''}
+      ${canAccess('notice') ? `
+      <a href="/admin/notice" class="admin-nav-item ${activeNav === 'notice' ? 'active' : ''}">
+        <span>🔔</span> Notice Panel Studio
       </a>` : ''}
       ` : ''}
 

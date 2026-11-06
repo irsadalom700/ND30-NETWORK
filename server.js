@@ -43,6 +43,13 @@ const { renderReporterApplicationsAdmin } = require('./views/admin/reporters');
 const { renderSocialQrAdmin } = require('./views/admin/socialQr');
 const { renderAdvertisementAdmin } = require('./views/admin/advertisements');
 const { renderRolesAdmin } = require('./views/admin/roles');
+const { renderNoticeAdmin } = require('./views/admin/notice');
+const {
+  getNotice,
+  saveNotice,
+  toggleNoticeStatus,
+  uploadNoticeImage
+} = require('./services/noticeService');
 const { renderLoginPage } = require('./views/login');
 const { renderPromoterDashboard } = require('./views/promoter/dashboard');
 const { renderVerifyPressIdPage } = require('./views/verifyPressId');
@@ -686,6 +693,51 @@ app.get('/admin/editor', checkModule('editor'), (req, res) => {
 app.get('/admin/articles', checkModule('articles'), (req, res) => {
   const content = renderArticlesList();
   res.send(renderAdminLayout({ title: 'Multilingual News Library', activeNav: 'articles', content, currentUser: req.user }));
+});
+
+// Notice Panel Studio (Frontend Notice Manager with On/Off State, Text Styling & 5 Animations)
+app.get('/admin/notice', checkModule('notice'), (req, res) => {
+  const notice = getNotice();
+  res.send(renderNoticeAdmin({
+    notice,
+    message: req.query.msg || '',
+    error: req.query.err || '',
+    currentUser: req.user
+  }));
+});
+
+app.post('/admin/notice/save', checkModule('notice'), (req, res) => {
+  uploadNoticeImage(req, res, (err) => {
+    if (err) {
+      const notice = getNotice();
+      return res.status(400).send(renderNoticeAdmin({
+        notice,
+        error: err.message || 'Image upload error',
+        currentUser: req.user
+      }));
+    }
+    try {
+      saveNotice(req.body, req.file);
+      res.redirect('/admin/notice?msg=' + encodeURIComponent('Notice panel saved and published successfully!'));
+    } catch (saveErr) {
+      const notice = getNotice();
+      res.status(500).send(renderNoticeAdmin({
+        notice,
+        error: saveErr.message || 'Failed to save notice',
+        currentUser: req.user
+      }));
+    }
+  });
+});
+
+app.post('/admin/notice/toggle', checkModule('notice'), (req, res) => {
+  try {
+    const isActive = req.body.is_active === 1 || req.body.is_active === '1' || req.body.is_active === true;
+    const result = toggleNoticeStatus(req.body.id, isActive);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 app.get('/admin/facebook', checkModule('facebook'), (req, res) => {
