@@ -220,10 +220,6 @@ function renderLayout({
             <option value="/${l.code}/" ${l.code === currentLang ? 'selected' : ''}>${l.native_name} (${l.code.toUpperCase()})</option>
           `).join('')}
         </select>
-        
-        <a href="/${currentLang}/rss.xml" title="RSS Feed" style="color:var(--accent-gold); font-size:1.1rem; padding:4px;">
-          📡
-        </a>
       </div>
     </div>
   </nav>
