@@ -100,6 +100,11 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
 
       <!-- Preview Canvas -->
       <div id="previewCard" style="background:linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%); color:#ffffff; border-radius:10px; padding:10px 18px; display:flex; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.18); min-height:50px; overflow:hidden;">
+        <!-- Blinking Notice Tag Preview -->
+        <div class="nd30-notice-tag" style="display:inline-flex; align-items:center; flex-shrink:0; padding:4px 12px; background:rgba(0,0,0,0.32); border:1px solid rgba(255,255,255,0.28); border-radius:6px; margin-right:14px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+          <span class="nd30-notice-blink-text" style="font-weight:800; font-size:0.84rem; letter-spacing:0.8px; text-transform:uppercase; color:#ffffff; animation:nd30NoticeBlink 1.25s ease-in-out infinite; white-space:nowrap;">Notice / জাননী / सूचना</span>
+        </div>
+
         <!-- Badge (Hidden) -->
         <div id="previewBadge" style="display:none !important;">
           <span style="width:7px; height:7px; background:#fff; border-radius:50%; display:inline-block; animation:nd30NoticeDotPulse 1.4s ease-in-out infinite;"></span>
@@ -407,6 +412,18 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
     @keyframes nd30NoticeDotPulse {
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.6); opacity: 0.5; }
+    }
+    @keyframes nd30NoticeBlink {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 225, 50, 0.75);
+      }
+      50% {
+        opacity: 0.15;
+        transform: scale(0.97);
+        text-shadow: none;
+      }
     }
   </style>
 

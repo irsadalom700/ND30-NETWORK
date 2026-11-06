@@ -250,7 +250,7 @@ function renderLayout({
   </section>` : ''}
 
   <!-- Frontend Notice Panel (Live with On/Off State, Text Styling & 5 Animations) -->
-  ${renderNoticePanel(activeNotice)}
+  ${renderNoticePanel(activeNotice, currentLang)}
 
   <!-- Main Dynamic Page Content -->
   <main class="main-content">
