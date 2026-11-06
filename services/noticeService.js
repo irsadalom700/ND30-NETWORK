@@ -138,12 +138,7 @@ function getNoticeById(id) {
 function saveNotice(data, file = null) {
   try {
     const id = data.id ? parseInt(data.id, 10) : null;
-    let imageUrl = data.image_url || '';
-
-    // If new file was uploaded, use its path
-    if (file && file.filename) {
-      imageUrl = `/uploads/notices/${file.filename}`;
-    }
+    let imageUrl = ''; // Photo section hidden and disabled
 
     const title = (data.title || '').trim();
     const message = (data.message || '').trim();
@@ -171,7 +166,7 @@ function saveNotice(data, file = null) {
         UPDATE frontend_notices SET
           title = ?,
           message = ?,
-          image_url = CASE WHEN ? != '' THEN ? ELSE image_url END,
+          image_url = '',
           link_url = ?,
           link_text = ?,
           badge_text = ?,
@@ -188,7 +183,7 @@ function saveNotice(data, file = null) {
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
-        title, message, imageUrl, imageUrl, linkUrl, linkText,
+        title, message, linkUrl, linkText,
         badgeText, badgeBg, badgeColor, animationType, bgTheme, customBg,
         textColor, fontSize, fontWeight, isActive, showCloseButton, id
       );

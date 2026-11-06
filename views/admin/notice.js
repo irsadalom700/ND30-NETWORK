@@ -106,9 +106,6 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
           <span id="previewBadgeText">${escapeHtml(n.badge_text)}</span>
         </div>
 
-        <!-- Thumbnail Image -->
-        <img id="previewThumb" src="${escapeHtml(n.image_url || '/images/nd30_live_logo.png')}" alt="Notice Photo" style="width:40px; height:40px; border-radius:8px; object-fit:cover; border:2px solid rgba(255,255,255,0.4); box-shadow:0 3px 10px rgba(0,0,0,0.35); flex-shrink:0; ${n.image_url ? 'display:block;' : 'display:none;'}">
-
         <!-- Animated Message Text -->
         <div id="previewBody" style="flex:1; overflow:hidden; display:flex; align-items:center;">
           <div id="previewText" class="notice-anim-${n.animation_type}" style="font-size:1.05rem; font-weight:${n.font_weight}; color:${n.text_color}; line-height:1.4;">
@@ -137,7 +134,7 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
         <!-- Column 1: Content & Small Photo -->
         <div style="background:var(--admin-card-bg); border:1px solid var(--admin-border); border-radius:12px; padding:22px;">
           <h2 style="font-size:1.1rem; font-weight:700; color:#ffffff; margin:0 0 16px 0; display:flex; align-items:center; gap:8px;">
-            <span>📝</span> 1. Notice Text & Small Photo
+            <span>📝</span> 1. Notice Text & Message
           </h2>
 
           <!-- Notice Message -->
@@ -151,48 +148,8 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
             </div>
           </div>
 
-          <!-- Small Photo / Icon Upload -->
-          <div style="margin-bottom:18px;">
-            <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">
-              Small Photo / Thumbnail / Icon (ফটো বা আইকন)
-            </label>
-            
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:10px;">
-              <div style="width:56px; height:56px; border-radius:10px; background:rgba(0,0,0,0.3); border:2px dashed var(--admin-border); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
-                <img id="formThumbPreview" src="${escapeHtml(n.image_url || '/images/nd30_live_logo.png')}" alt="Preview" style="width:100%; height:100%; object-fit:cover; ${n.image_url ? 'display:block;' : 'display:none;'}">
-                <span id="formThumbPlaceholder" style="font-size:1.4rem; ${n.image_url ? 'display:none;' : 'display:block;'}">📷</span>
-              </div>
-
-              <div style="flex:1;">
-                <input type="file" name="notice_photo" id="photoFileInput" accept="image/*" onchange="previewUploadedPhoto(this)" style="display:none;">
-                <button type="button" onclick="document.getElementById('photoFileInput').click()" class="btn" style="background:rgba(255,255,255,0.08); color:#ffffff; border:1px solid var(--admin-border); padding:7px 14px; border-radius:6px; font-size:0.82rem; cursor:pointer; font-weight:600; margin-right:8px;">
-                  📁 Browse & Upload Photo
-                </button>
-                <button type="button" onclick="clearPhoto()" class="btn" style="background:transparent; color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:7px 12px; border-radius:6px; font-size:0.82rem; cursor:pointer;">
-                  Clear Photo
-                </button>
-                <div style="font-size:0.72rem; color:var(--admin-muted); margin-top:4px;">
-                  Upload small thumbnail photo, reporter icon, or emblem (JPG, PNG, WEBP, max 2MB).
-                </div>
-              </div>
-            </div>
-
-            <!-- Image URL field (manual URL or uploaded path) -->
-            <div>
-              <label style="display:block; font-size:0.78rem; color:var(--admin-muted); margin-bottom:4px;">Or specify Image URL:</label>
-              <input type="text" name="image_url" id="imageUrlInput" value="${escapeHtml(n.image_url)}" oninput="updateLivePreview()" style="width:100%; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:7px 12px; font-size:0.85rem;" placeholder="/images/nd30_live_logo.png">
-            </div>
-
-            <!-- Quick Preset Badges -->
-            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" onclick="setPresetPhoto('/images/nd30_live_logo.png')" class="btn" style="background:rgba(255,255,255,0.05); color:var(--admin-text); border:1px solid var(--admin-border); padding:3px 8px; border-radius:4px; font-size:0.75rem;">
-                🔴 ND30 3D Logo
-              </button>
-              <button type="button" onclick="setPresetPhoto('/images/nd30_live_logo_solid.png')" class="btn" style="background:rgba(255,255,255,0.05); color:var(--admin-text); border:1px solid var(--admin-border); padding:3px 8px; border-radius:4px; font-size:0.75rem;">
-                ⬛ Solid Emblem
-              </button>
-            </div>
-          </div>
+          <!-- Hidden Image URL (Empty - Photo Section Hidden) -->
+          <input type="hidden" name="image_url" id="imageUrlInput" value="">
 
           <!-- Badge Text & Styling -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
@@ -523,36 +480,6 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       }
     }
 
-    function setPresetPhoto(url) {
-      document.getElementById('imageUrlInput').value = url;
-      document.getElementById('formThumbPreview').src = url;
-      document.getElementById('formThumbPreview').style.display = 'block';
-      document.getElementById('formThumbPlaceholder').style.display = 'none';
-      updateLivePreview();
-    }
-
-    function clearPhoto() {
-      document.getElementById('imageUrlInput').value = '';
-      document.getElementById('photoFileInput').value = '';
-      document.getElementById('formThumbPreview').style.display = 'none';
-      document.getElementById('formThumbPlaceholder').style.display = 'block';
-      updateLivePreview();
-    }
-
-    function previewUploadedPhoto(input) {
-      if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('formThumbPreview').src = e.target.result;
-          document.getElementById('formThumbPreview').style.display = 'block';
-          document.getElementById('formThumbPlaceholder').style.display = 'none';
-          document.getElementById('previewThumb').src = e.target.result;
-          document.getElementById('previewThumb').style.display = 'block';
-        };
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
-
     function updateLivePreview() {
       var msg = document.getElementById('inputMessage').value || 'Enter notice message...';
       var badgeText = document.getElementById('inputBadgeText').value || '📢 জাননী / NOTICE';
@@ -560,7 +487,6 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       var textColor = document.getElementById('inputTextColor').value || '#ffffff';
       var fontSizeKey = document.getElementById('inputFontSize').value;
       var fontWeight = document.getElementById('inputFontWeight').value;
-      var imageUrl = document.getElementById('imageUrlInput').value;
       var linkUrl = document.getElementById('inputLinkUrl').value;
       var linkText = document.getElementById('inputLinkText').value || 'পঢ়ক / Read More ➜';
       var showClose = document.getElementById('inputCloseBtn').checked;
@@ -571,15 +497,6 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       // Update Badge
       document.getElementById('previewBadgeText').textContent = badgeText;
       document.getElementById('previewBadge').style.background = badgeBg;
-
-      // Update Image Thumbnail
-      var thumb = document.getElementById('previewThumb');
-      if (imageUrl || (document.getElementById('photoFileInput').files && document.getElementById('photoFileInput').files[0])) {
-        thumb.style.display = 'block';
-        if (imageUrl) thumb.src = imageUrl;
-      } else {
-        thumb.style.display = 'none';
-      }
 
       // Update Text & Animation
       var textEl = document.getElementById('previewText');

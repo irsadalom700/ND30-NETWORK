@@ -51,7 +51,6 @@ function renderNoticePanel(notice) {
   const badgeColor = notice.badge_color || '#ffffff';
   const rawMessage = notice.message || '';
   const messageSafe = escapeHtml(rawMessage);
-  const imageUrl = notice.image_url ? escapeHtml(notice.image_url) : '';
   const linkUrl = notice.link_url ? escapeHtml(notice.link_url) : '';
   const linkText = escapeHtml(notice.link_text || 'পঢ়ক / Read More ➜');
   const animType = notice.animation_type || 'marquee';
@@ -297,13 +296,6 @@ function renderNoticePanel(notice) {
           <span class="nd30-notice-pulse-dot"></span>
           <span>${badgeText}</span>
         </div>
-
-        <!-- Small Photo / Thumbnail (if configured) -->
-        ${imageUrl ? `
-          <a href="${linkUrl || imageUrl}" class="nd30-notice-thumb-link" ${linkUrl ? '' : 'target="_blank"'} title="Notice Image">
-            <img src="${imageUrl}" alt="Notice" class="nd30-notice-thumb" loading="lazy">
-          </a>
-        ` : ''}
 
         <!-- Animated Notice Body -->
         <div class="nd30-notice-body">

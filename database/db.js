@@ -597,7 +597,7 @@ function initDatabase() {
       ) VALUES (
         'ND30 LIVE Official Notice',
         'উত্তৰ-পূবৰ নিৰ্ভীক আৰু নিৰপেক্ষ সংবাদ মাধ্যম ND30 LIVE লৈ স্বাগতম! Welcome to ND30 LIVE Digital Portal.',
-        '/images/nd30_live_logo.png',
+        '',
         '/as/',
         'অধিক পঢ়ক ➜',
         '📢 বিশেষ জাননী',
@@ -613,6 +613,11 @@ function initDatabase() {
       )
     `).run();
   }
+
+  // Clear any existing notice photos (user requested photo section hidden)
+  try {
+    db.prepare("UPDATE frontend_notices SET image_url = '' WHERE image_url IS NOT NULL AND image_url != ''").run();
+  } catch (e) {}
 
   // Seed default sidebar advertisement slides if empty
   const slideCount = db.prepare('SELECT COUNT(*) as count FROM sidebar_slides').get().count;
