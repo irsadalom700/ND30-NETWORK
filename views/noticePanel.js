@@ -1,7 +1,7 @@
 /**
  * ND30 LIVE - Frontend Notice Ticker Component
  * Matches the exact design, proportions, animation, and responsiveness
- * of the Breaking News Section directly above it.
+ * of the Breaking News Section, aligned inside the main content container.
  * Full multilingual translation support for Assamese, Hindi, and English.
  */
 
@@ -61,23 +61,28 @@ function renderNoticePanel(notice, currentLang = 'as') {
   }
 
   return `
-  <!-- Notice Ticker (Exact Match to Breaking News Section) -->
-  <section id="nd30NoticePanel" class="notice-ticker" aria-label="Official Notice Ticker">
+  <!-- Notice Ticker (Container-Aligned Between Breaking News & Hero Section) -->
+  <section id="nd30NoticePanel" class="notice-ticker-wrapper" aria-label="Official Notice Ticker">
     <style>
+      .notice-ticker-wrapper {
+        width: 100%;
+        margin: 12px 0 14px 0;
+        position: relative;
+        z-index: 90;
+      }
       .notice-ticker {
         background: var(--bg-card);
-        border-bottom: 1px solid var(--border-color);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
         display: flex;
         align-items: stretch;
         overflow: hidden;
-        width: 100%;
-        position: relative;
-        z-index: 90;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
       }
       .notice-ticker-label {
         background: #be123c;
         color: #ffffff;
-        padding: 10px 18px;
+        padding: 9px 18px;
         font-weight: 800;
         font-size: 0.85rem;
         text-transform: uppercase;
@@ -129,6 +134,9 @@ function renderNoticePanel(notice, currentLang = 'as') {
         100% { transform: translateX(-50%); }
       }
       @media (max-width: 768px) {
+        .notice-ticker-wrapper {
+          margin: 8px 0 12px 0;
+        }
         .notice-ticker-label {
           padding: 6px 10px;
           font-size: 0.72rem;
@@ -143,28 +151,32 @@ function renderNoticePanel(notice, currentLang = 'as') {
       }
     </style>
 
-    <div class="notice-ticker-label">
-      <span class="pulse-dot"></span>
-      ${noticeLabel}
-    </div>
-    <div class="notice-ticker-content">
-      <div class="notice-ticker-marquee">
-        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
-          <span>${messageSafe}</span>
-          <span class="notice-ticker-separator">✦</span>
-        </a>
-        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
-          <span>${messageSafe}</span>
-          <span class="notice-ticker-separator">✦</span>
-        </a>
-        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
-          <span>${messageSafe}</span>
-          <span class="notice-ticker-separator">✦</span>
-        </a>
-        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
-          <span>${messageSafe}</span>
-          <span class="notice-ticker-separator">✦</span>
-        </a>
+    <div class="container">
+      <div class="notice-ticker">
+        <div class="notice-ticker-label">
+          <span class="pulse-dot"></span>
+          ${noticeLabel}
+        </div>
+        <div class="notice-ticker-content">
+          <div class="notice-ticker-marquee">
+            <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+              <span>${messageSafe}</span>
+              <span class="notice-ticker-separator">✦</span>
+            </a>
+            <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+              <span>${messageSafe}</span>
+              <span class="notice-ticker-separator">✦</span>
+            </a>
+            <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+              <span>${messageSafe}</span>
+              <span class="notice-ticker-separator">✦</span>
+            </a>
+            <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+              <span>${messageSafe}</span>
+              <span class="notice-ticker-separator">✦</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
