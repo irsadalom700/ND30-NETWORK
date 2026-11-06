@@ -542,13 +542,15 @@ function createSlide(data, file) {
     const title = (data.title || '').trim();
     const linkUrl = (data.link_url || '').trim();
     const caption = (data.caption || '').trim();
+    const whatsappNumber = (data.whatsapp_number || '').trim().replace(/[^0-9+]/g, '');
+    const whatsappMessage = (data.whatsapp_message || '').trim();
     const sortOrder = parseInt(data.sort_order, 10) || 1;
     const isActive = (data.is_active === '1' || data.is_active === 1 || data.is_active === true || data.is_active === 'on') ? 1 : 0;
 
     const res = db.prepare(`
-      INSERT INTO sidebar_slides (title, image_url, link_url, caption, sort_order, is_active)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(title, imageUrl, linkUrl, caption, sortOrder, isActive);
+      INSERT INTO sidebar_slides (title, image_url, link_url, caption, sort_order, is_active, whatsapp_number, whatsapp_message)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(title, imageUrl, linkUrl, caption, sortOrder, isActive, whatsappNumber, whatsappMessage);
 
     return getSlideById(res.lastInsertRowid);
   } catch (err) {

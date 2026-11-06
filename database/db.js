@@ -493,6 +493,8 @@ function initDatabase() {
       image_url TEXT NOT NULL,
       link_url TEXT DEFAULT '',
       caption TEXT DEFAULT '',
+      whatsapp_number TEXT DEFAULT '',
+      whatsapp_message TEXT DEFAULT '',
       sort_order INTEGER DEFAULT 1,
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -648,6 +650,19 @@ function initDatabase() {
       3
     );
   }
+
+  // Ensure whatsapp_number and whatsapp_message columns exist in sidebar_slides
+  try {
+    const slideCols = db.prepare("PRAGMA table_info(sidebar_slides)").all();
+    const colNames = slideCols.map(c => c.name);
+    if (!colNames.includes('whatsapp_number')) {
+      db.prepare("ALTER TABLE sidebar_slides ADD COLUMN whatsapp_number TEXT DEFAULT ''").run();
+    }
+    if (!colNames.includes('whatsapp_message')) {
+      db.prepare("ALTER TABLE sidebar_slides ADD COLUMN whatsapp_message TEXT DEFAULT ''").run();
+    }
+    db.prepare("UPDATE sidebar_slides SET whatsapp_number = '919876543210', whatsapp_message = 'Hello! I saw your advertisement on ND30 LIVE and would like to connect.' WHERE whatsapp_number IS NULL OR whatsapp_number = ''").run();
+  } catch (e) {}
 
   // Seed default promotion types for ND30 Live if empty
   const promoTypeCount = db.prepare('SELECT COUNT(*) as count FROM ad_promotion_types').get().count;

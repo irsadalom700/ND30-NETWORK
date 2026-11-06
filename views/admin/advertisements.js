@@ -303,6 +303,24 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
             </div>
 
             <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #22c55e; margin-bottom: 6px;">
+                💬 WhatsApp Number for Inquiries <span style="color: #94a3b8; font-weight: normal;">(Adds "Contact" button on image to start WhatsApp chat)</span>
+              </label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.35); color: #22c55e; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700;">+91</span>
+                <input type="text" name="whatsapp_number" id="slideWhatsappInput" placeholder="e.g. 9876543210 (10 digits)" style="flex: 1; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+              </div>
+              <div style="margin-top: 4px; font-size: 0.72rem; color: #64748b;">
+                When visitors click the "Contact" button on this ad, WhatsApp immediately opens to start a direct chat.
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">WhatsApp Pre-filled Message <span style="color: #64748b;">(Optional)</span></label>
+              <input type="text" name="whatsapp_message" placeholder="e.g. Hello, I am interested in your ad on ND30 LIVE." style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+            </div>
+
+            <div>
               <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Target Link URL <span style="color: #64748b;">(Optional - opens when clicked)</span></label>
               <input type="text" name="link_url" placeholder="https://wa.me/91XXXXXXXXXX or https://brandwebsite.com" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
             </div>
@@ -379,6 +397,7 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
                   <th style="padding: 12px 16px; width: 100px;">Photo</th>
                   <th style="padding: 12px 16px;">Slide Details</th>
                   <th style="padding: 12px 16px;">Target Link</th>
+                  <th style="padding: 12px 16px;">WhatsApp Chat</th>
                   <th style="padding: 12px 16px; text-align: center;">Order</th>
                   <th style="padding: 12px 16px; text-align: center;">Status (On/Off)</th>
                   <th style="padding: 12px 16px; text-align: right;">Action</th>
@@ -403,7 +422,16 @@ function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
                           <span>🔗</span> ${escapeHtml(slide.link_url)}
                         </a>
                       ` : `
-                        <span style="color: #64748b; font-size: 0.78rem;">No link (Display only)</span>
+                        <span style="color: #64748b; font-size: 0.78rem;">No link</span>
+                      `}
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      ${slide.whatsapp_number ? `
+                        <a href="https://wa.me/${String(slide.whatsapp_number).replace(/[^0-9]/g, '').length === 10 ? '91' + String(slide.whatsapp_number).replace(/[^0-9]/g, '') : String(slide.whatsapp_number).replace(/[^0-9]/g, '')}" target="_blank" style="color: #22c55e; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                          <span>💬</span> ${escapeHtml(slide.whatsapp_number)}
+                        </a>
+                      ` : `
+                        <span style="color: #64748b; font-size: 0.78rem;">None</span>
                       `}
                     </td>
                     <td style="padding: 12px 16px; text-align: center; color: #cbd5e1; font-weight: 700;">
