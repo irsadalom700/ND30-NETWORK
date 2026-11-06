@@ -373,3 +373,4 @@ function renderNoticePanel(notice) {
 module.exports = {
   renderNoticePanel
 };
+

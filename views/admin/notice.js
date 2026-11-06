@@ -665,3 +665,4 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
 module.exports = {
   renderNoticeAdmin
 };
+

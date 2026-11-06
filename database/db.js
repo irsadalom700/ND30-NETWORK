@@ -6,8 +6,14 @@ const dbPath = path.join(__dirname, 'nd30_news.db');
 const db = new Database(dbPath);
 
 // Enable WAL mode and foreign keys for high concurrency & integrity
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+try {
+  db.pragma('journal_mode = WAL');
+} catch (e) {
+  try { db.pragma('journal_mode = DELETE'); } catch (e2) {}
+}
+try {
+  db.pragma('foreign_keys = ON');
+} catch (e) {}
 
 function initDatabase() {
   db.exec(`
