@@ -1,7 +1,8 @@
 /**
- * ND30 LIVE - Frontend Notice Panel Component
- * Renders the notice banner with text styling, small photo, 5 text animations,
- * and live On/Off state.
+ * ND30 LIVE - Frontend Notice Ticker Component
+ * Matches the exact design, proportions, animation, and responsiveness
+ * of the Breaking News Section directly above it.
+ * Full multilingual translation support for Assamese, Hindi, and English.
  */
 
 function escapeHtml(str) {
@@ -14,22 +15,6 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-const BG_THEMES = {
-  'crimson-alert': 'linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%)',
-  'midnight-blue': 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #172554 100%)',
-  'emerald-green': 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%)',
-  'royal-gold': 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #92400e 100%)',
-  'deep-velvet': 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #5b21b6 100%)',
-  'glass-slate': 'linear-gradient(135deg, rgba(30,41,59,0.96) 0%, rgba(15,23,42,0.98) 100%)'
-};
-
-const FONT_SIZES = {
-  'normal': '0.95rem',
-  'medium': '1.05rem',
-  'large': '1.2rem',
-  'xlarge': '1.35rem'
-};
-
 /**
  * Render the frontend Notice Panel HTML
  * If notice is null or is_active != 1, returns empty string ''
@@ -39,354 +24,149 @@ function renderNoticePanel(notice, currentLang = 'as') {
     return ''; // Completely removed when OFF
   }
 
-  // Multilingual translations for the Notice label
+  // 1. Multilingual Label (Matches Breaking News Ticker Label format)
   const langKey = (currentLang || 'as').toLowerCase().trim();
-  let noticeLabel = 'Notice';
+  let noticeLabel = 'NOTICE';
   if (langKey === 'as') {
     noticeLabel = 'জাননী';
   } else if (langKey === 'hi') {
     noticeLabel = 'सूचना';
   } else {
-    noticeLabel = 'Notice';
+    noticeLabel = 'NOTICE';
   }
 
-  const bgStyle = notice.bg_theme === 'custom' && notice.custom_bg
-    ? notice.custom_bg
-    : (BG_THEMES[notice.bg_theme] || BG_THEMES['crimson-alert']);
+  // 2. Multilingual Main Text Selection
+  let rawMessage = '';
+  if (langKey === 'as') {
+    rawMessage = notice.message_as || notice.message || '';
+  } else if (langKey === 'hi') {
+    rawMessage = notice.message_hi || notice.message || '';
+  } else if (langKey === 'en') {
+    rawMessage = notice.message_en || notice.message || '';
+  } else {
+    rawMessage = notice.message || '';
+  }
 
-  const fontSize = FONT_SIZES[notice.font_size] || '1.05rem';
-  const fontWeight = notice.font_weight || '600';
-  const textColor = notice.text_color || '#ffffff';
-  const rawMessage = notice.message || '';
+  if (!rawMessage || !rawMessage.trim()) {
+    rawMessage = notice.message || '';
+  }
+
   const messageSafe = escapeHtml(rawMessage);
+
+  // 3. Dynamic Link URL preserving current language
   const linkUrl = notice.link_url ? escapeHtml(notice.link_url) : '';
   let dynamicLinkUrl = linkUrl;
   if (dynamicLinkUrl === '/as/' || dynamicLinkUrl === '/hi/' || dynamicLinkUrl === '/en/') {
     dynamicLinkUrl = `/${langKey}/`;
   }
-  const animType = notice.animation_type || 'marquee';
 
   return `
-  <!-- ND30 LIVE Animated Notice Panel -->
-  <section id="nd30NoticePanel" class="nd30-notice-banner-container" aria-label="Official Notice">
+  <!-- Notice Ticker (Exact Match to Breaking News Section) -->
+  <section id="nd30NoticePanel" class="notice-ticker" aria-label="Official Notice Ticker">
     <style>
-      .nd30-notice-banner-container {
-        width: 100%;
-        margin: 0 0 16px 0;
-        position: relative;
-        z-index: 95;
-      }
-      .nd30-notice-card {
-        background: ${bgStyle};
-        color: ${textColor};
-        border-radius: 10px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        padding: 9px 18px;
+      .notice-ticker {
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
         display: flex;
-        align-items: center;
-        position: relative;
+        align-items: stretch;
         overflow: hidden;
-      }
-      .nd30-notice-tag {
-        display: inline-flex;
-        align-items: center;
-        flex-shrink: 0;
-        padding: 4px 12px;
-        background: rgba(0, 0, 0, 0.32);
-        border: 1px solid rgba(255, 255, 255, 0.28);
-        border-radius: 6px;
-        margin-right: 14px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        z-index: 2;
+        width: 100%;
         position: relative;
+        z-index: 90;
       }
-      .nd30-notice-blink-text {
+      .notice-ticker-label {
+        background: #be123c;
+        color: #ffffff;
+        padding: 10px 18px;
         font-weight: 800;
         font-size: 0.85rem;
-        letter-spacing: 0.8px;
         text-transform: uppercase;
-        color: #ffffff;
-        animation: nd30NoticeBlink 1.25s ease-in-out infinite;
-        white-space: nowrap;
-        user-select: none;
-        display: inline-block;
-      }
-      @keyframes nd30NoticeBlink {
-        0%, 100% {
-          opacity: 1;
-          transform: scale(1);
-          text-shadow: 0 0 8px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 225, 50, 0.75);
-        }
-        50% {
-          opacity: 0.15;
-          transform: scale(0.97);
-          text-shadow: none;
-        }
-      }
-      .nd30-notice-badge,
-      .nd30-notice-action-btn,
-      .nd30-notice-close-btn {
-        display: none !important;
-      }
-      .nd30-notice-pulse-dot {
-        display: none !important;
-      }
-      @keyframes nd30NoticeDotPulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.6); opacity: 0.5; }
-      }
-      .nd30-notice-thumb-link {
-        display: inline-flex;
-        align-items: center;
-        flex-shrink: 0;
-        text-decoration: none;
-      }
-      .nd30-notice-thumb {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        object-fit: cover;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        background: rgba(0, 0, 0, 0.2);
-      }
-      .nd30-notice-thumb:hover {
-        transform: scale(1.08);
-        box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3);
-      }
-      .nd30-notice-body {
-        flex: 1;
-        overflow: hidden;
-        position: relative;
+        letter-spacing: 0.5px;
         display: flex;
         align-items: center;
-        min-height: 28px;
-      }
-      .nd30-notice-text {
-        font-size: ${fontSize};
-        font-weight: ${fontWeight};
-        color: ${textColor};
-        line-height: 1.4;
-      }
-      
-      /* Animation 1: Marquee Continuous Ticker */
-      .notice-anim-marquee {
-        display: inline-block;
+        gap: 8px;
         white-space: nowrap;
-        padding-left: 100%;
-        animation: nd30NoticeMarquee 26s linear infinite;
-        will-change: transform;
+        z-index: 2;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
       }
-      .notice-anim-marquee:hover {
+      .notice-ticker-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+      }
+      .notice-ticker-marquee {
+        display: flex;
+        gap: 40px;
+        white-space: nowrap;
+        animation: noticeMarqueeScroll 35s linear infinite;
+      }
+      .notice-ticker-marquee:hover {
         animation-play-state: paused;
       }
-      @keyframes nd30NoticeMarquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-100%); }
-      }
-
-      /* Animation 2: Neon Pulse & Glow */
-      .notice-anim-pulse-glow {
-        display: inline-block;
-        animation: nd30NoticePulseGlow 2.5s ease-in-out infinite;
-        will-change: transform, text-shadow;
-      }
-      @keyframes nd30NoticePulseGlow {
-        0%, 100% {
-          transform: scale(1);
-          text-shadow: 0 0 4px rgba(255,255,255,0.4), 0 0 10px rgba(255,255,255,0.2);
-        }
-        50% {
-          transform: scale(1.025);
-          text-shadow: 0 0 12px rgba(255,255,255,0.95), 0 0 24px rgba(255,225,50,0.85), 0 0 35px rgba(239,68,68,0.7);
-        }
-      }
-
-      /* Animation 3: Typewriter Effect */
-      .notice-anim-typewriter {
-        display: inline-block;
-        position: relative;
-        white-space: pre-wrap;
-      }
-      .notice-anim-typewriter-cursor {
-        display: inline-block;
-        margin-left: 3px;
-        font-weight: 300;
-        animation: nd30NoticeBlinkCursor 0.8s infinite;
-        color: currentColor;
-      }
-      @keyframes nd30NoticeBlinkCursor {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-
-      /* Animation 4: Bounce & Float */
-      .notice-anim-bounce-float {
-        display: inline-block;
-        animation: nd30NoticeBounceFloat 2.6s ease-in-out infinite;
-        will-change: transform;
-      }
-      @keyframes nd30NoticeBounceFloat {
-        0%, 100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-4px);
-        }
-      }
-
-      /* Animation 5: Metallic Shimmer Shine */
-      .notice-anim-shimmer-shine {
-        display: inline-block;
-        background: linear-gradient(
-          90deg,
-          ${textColor} 0%,
-          #ffffff 35%,
-          #ffe600 50%,
-          #ffffff 65%,
-          ${textColor} 100%
-        );
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: nd30NoticeShimmer 3.2s linear infinite;
-      }
-      @keyframes nd30NoticeShimmer {
-        0% { background-position: -200% center; }
-        100% { background-position: 200% center; }
-      }
-
-      .nd30-notice-action-btn {
-        background: rgba(255, 255, 255, 0.22);
-        color: #ffffff;
+      .notice-ticker-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.90rem;
+        font-weight: 500;
+        color: var(--text-main);
         text-decoration: none;
-        padding: 5px 12px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        white-space: nowrap;
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        backdrop-filter: blur(4px);
-        transition: all 0.2s ease;
-        flex-shrink: 0;
+        transition: color 0.15s ease;
       }
-      .nd30-notice-action-btn:hover {
-        background: #ffffff;
-        color: #111827;
-        box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
-        transform: translateY(-1px);
+      .notice-ticker-item:hover {
+        color: #f43f5e;
+        text-decoration: underline;
       }
-      .nd30-notice-close-btn {
-        background: transparent;
-        border: none;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1.1rem;
-        cursor: pointer;
-        padding: 2px 6px;
-        border-radius: 4px;
-        line-height: 1;
-        transition: all 0.15s ease;
-        flex-shrink: 0;
+      .notice-ticker-separator {
+        color: var(--accent-gold);
+        font-size: 0.85rem;
       }
-      .nd30-notice-close-btn:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.2);
+      @keyframes noticeMarqueeScroll {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-50%); }
       }
-
       @media (max-width: 768px) {
-        .nd30-notice-card {
-          padding: 8px 10px;
-        }
-        .nd30-notice-tag {
-          padding: 3px 8px;
-          margin-right: 8px;
-        }
-        .nd30-notice-blink-text {
+        .notice-ticker-label {
+          padding: 6px 10px;
           font-size: 0.72rem;
-          letter-spacing: 0.4px;
         }
-        .nd30-notice-text {
-          font-size: 0.92rem !important;
+        .notice-ticker-content {
+          padding: 0 10px;
         }
-      }
-      @media (max-width: 480px) {
-        .nd30-notice-card {
-          padding: 7px 8px;
-        }
-        .nd30-notice-tag {
-          padding: 2px 6px;
-          margin-right: 6px;
-        }
-        .nd30-notice-blink-text {
-          font-size: 0.65rem;
-          letter-spacing: 0.2px;
-        }
-        .nd30-notice-text {
-          font-size: 0.82rem !important;
+        .notice-ticker-item {
+          font-size: 0.82rem;
+          padding: 6px 0;
         }
       }
     </style>
 
-    <div class="container">
-      <div class="nd30-notice-card">
-        <!-- Blinking Notice Label Tag -->
-        <div class="nd30-notice-tag">
-          <span class="nd30-notice-blink-text">${noticeLabel}</span>
-        </div>
-
-        <!-- Animated Notice Body -->
-        <div class="nd30-notice-body">
-          ${linkUrl ? `<a href="${dynamicLinkUrl}" style="color:inherit; text-decoration:none; display:flex; align-items:center; width:100%; min-width:0; overflow:hidden;">` : ''}
-          ${animType === 'typewriter' ? `
-            <span id="nd30TypewriterNotice" class="nd30-notice-text notice-anim-typewriter" data-text="${escapeHtml(rawMessage)}"></span><span class="notice-anim-typewriter-cursor">|</span>
-          ` : `
-            <div class="nd30-notice-text notice-anim-${animType}">
-              ${messageSafe}
-            </div>
-          `}
-          ${linkUrl ? `</a>` : ''}
-        </div>
+    <div class="notice-ticker-label">
+      <span class="pulse-dot"></span>
+      ${noticeLabel}
+    </div>
+    <div class="notice-ticker-content">
+      <div class="notice-ticker-marquee">
+        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+          <span>${messageSafe}</span>
+          <span class="notice-ticker-separator">✦</span>
+        </a>
+        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+          <span>${messageSafe}</span>
+          <span class="notice-ticker-separator">✦</span>
+        </a>
+        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+          <span>${messageSafe}</span>
+          <span class="notice-ticker-separator">✦</span>
+        </a>
+        <a href="${dynamicLinkUrl || '#'}" class="notice-ticker-item" ${!dynamicLinkUrl ? 'style="cursor:default;"' : ''}>
+          <span>${messageSafe}</span>
+          <span class="notice-ticker-separator">✦</span>
+        </a>
       </div>
     </div>
-
-    ${animType === 'typewriter' ? `
-    <script>
-      (function() {
-        var el = document.getElementById('nd30TypewriterNotice');
-        if (!el) return;
-        var fullText = el.getAttribute('data-text') || '';
-        var charIdx = 0;
-        var isDeleting = false;
-        var speed = 45;
-
-        function tick() {
-          if (!isDeleting) {
-            charIdx++;
-            el.textContent = fullText.substring(0, charIdx);
-            if (charIdx >= fullText.length) {
-              isDeleting = true;
-              setTimeout(tick, 4500); // Wait 4.5s before re-typing
-              return;
-            }
-          } else {
-            charIdx--;
-            el.textContent = fullText.substring(0, charIdx);
-            if (charIdx <= 0) {
-              isDeleting = false;
-              setTimeout(tick, 600);
-              return;
-            }
-          }
-          setTimeout(tick, isDeleting ? 25 : speed);
-        }
-        tick();
-      })();
-    </script>
-    ` : ''}
   </section>
   `;
 }
@@ -394,4 +174,3 @@ function renderNoticePanel(notice, currentLang = 'as') {
 module.exports = {
   renderNoticePanel
 };
-

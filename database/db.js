@@ -468,6 +468,9 @@ function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT DEFAULT '',
       message TEXT NOT NULL,
+      message_as TEXT DEFAULT '',
+      message_hi TEXT DEFAULT '',
+      message_en TEXT DEFAULT '',
       image_url TEXT DEFAULT '',
       link_url TEXT DEFAULT '',
       link_text TEXT DEFAULT 'পঢ়ক / Read More',
@@ -620,6 +623,36 @@ function initDatabase() {
   try {
     db.prepare("UPDATE frontend_notices SET image_url = '' WHERE image_url IS NOT NULL AND image_url != ''").run();
   } catch (e) {}
+
+  // Migrate multilingual notice message columns
+  try {
+    const noticeCols = db.prepare('PRAGMA table_info(frontend_notices)').all().map(c => c.name);
+    if (!noticeCols.includes('message_as')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN message_as TEXT DEFAULT ""').run();
+    }
+    if (!noticeCols.includes('message_hi')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN message_hi TEXT DEFAULT ""').run();
+    }
+    if (!noticeCols.includes('message_en')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN message_en TEXT DEFAULT ""').run();
+    }
+
+    const currentNotice = db.prepare('SELECT * FROM frontend_notices LIMIT 1').get();
+    if (currentNotice) {
+      const msgAs = currentNotice.message_as || currentNotice.message || 'উত্তৰ-পূবৰ নিৰ্ভীক আৰু নিৰপেক্ষ সংবাদ মাধ্যম ND30 LIVE লৈ স্বাগতম! সকলো শেহতীয়া বাতৰিৰ বাবে আমাৰ সৈতে থাকক।';
+      const msgHi = currentNotice.message_hi || 'पूर्वोत्तर के निर्भीक और निष्पक्ष समाचार माध्यम ND30 LIVE में आपका स्वागत है! ताज़ा समाचारों के लिए जुड़े रहें।';
+      const msgEn = currentNotice.message_en || "Welcome to ND30 LIVE - Northeast India's Bold & Unbiased Digital News Portal. Stay tuned for live updates.";
+      db.prepare(`
+        UPDATE frontend_notices 
+        SET message_as = COALESCE(NULLIF(message_as, ''), ?),
+            message_hi = COALESCE(NULLIF(message_hi, ''), ?),
+            message_en = COALESCE(NULLIF(message_en, ''), ?)
+        WHERE id = ?
+      `).run(msgAs, msgHi, msgEn, currentNotice.id);
+    }
+  } catch (e) {
+    console.error('[DB Notice Multilingual Migration Error]', e.message);
+  }
 
   // Seed default sidebar advertisement slides if empty
   const slideCount = db.prepare('SELECT COUNT(*) as count FROM sidebar_slides').get().count;

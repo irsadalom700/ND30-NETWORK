@@ -746,6 +746,29 @@ app.post('/admin/notice/toggle', checkModule('notice'), (req, res) => {
   }
 });
 
+// Auto-Translate Notice Text across Assamese, Hindi, and English
+app.post('/admin/notice/translate', checkModule('notice'), async (req, res) => {
+  try {
+    const { text, sourceLang = 'as' } = req.body;
+    if (!text || !text.trim()) {
+      return res.json({ success: true, translations: { as: '', hi: '', en: '' } });
+    }
+    const { translateFullText } = require('./services/aiTranslator');
+    const cleanText = text.trim();
+    const translations = {};
+    for (const targetLang of ['as', 'hi', 'en']) {
+      if (targetLang === sourceLang) {
+        translations[targetLang] = cleanText;
+      } else {
+        translations[targetLang] = await translateFullText(cleanText, sourceLang, targetLang);
+      }
+    }
+    res.json({ success: true, translations });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/admin/facebook', checkModule('facebook'), (req, res) => {
   const content = renderFacebookDashboard();
   res.send(renderAdminLayout({ title: 'Facebook Import Review', activeNav: 'facebook', content, currentUser: req.user }));
