@@ -200,6 +200,35 @@ function renderAdSliderHtml(slides = []) {
         border-radius: 8px;
         padding: 20px;
       }
+      @media (max-width: 640px) {
+        .nd30-ad-slider-card {
+          padding: 10px;
+          border-radius: 10px;
+        }
+        .nd30-carousel-container {
+          height: 205px;
+        }
+        .nd30-ad-contact-btn {
+          top: 8px;
+          right: 8px;
+          padding: 5px 10px;
+          font-size: 0.72rem;
+        }
+        .nd30-carousel-caption {
+          padding: 14px 10px 8px 10px;
+        }
+        .nd30-carousel-caption-title {
+          font-size: 0.82rem;
+        }
+        .nd30-carousel-caption-sub {
+          font-size: 0.7rem;
+        }
+        .nd30-carousel-nav-btn {
+          width: 28px;
+          height: 28px;
+          font-size: 1rem;
+        }
+      }
     </style>
 
     <div class="nd30-ad-slider-header">

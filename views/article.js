@@ -175,7 +175,7 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
               ${currentLang === 'as' ? 'সম্পৰ্কীয় বাতৰি' : (currentLang === 'hi' ? 'संबंधित समाचार' : 'Related Stories')}
             </h3>
           </div>
-          <div class="news-grid-3" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="news-grid-cards">
             ${relatedArticles.map(rel => `
               <article class="news-card">
                 <div class="news-card-img-wrap" style="height:140px;">

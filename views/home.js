@@ -109,7 +109,7 @@ function renderHomePage(lang = 'as') {
     </section>` : ''}
 
     <!-- Main 2-Column Content / Sidebar Area -->
-    <div style="display:grid; grid-template-columns: 2.2fr 1fr; gap:36px;">
+    <div class="home-main-layout">
       <!-- Latest Stories Stream -->
       <div>
         <div class="section-header">
@@ -117,7 +117,7 @@ function renderHomePage(lang = 'as') {
           <span class="section-link">${currentLang.toUpperCase()} Edition</span>
         </div>
 
-        <div class="news-grid-3" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="news-grid-cards">
           ${(remainingArticles.length > 0 ? remainingArticles : latestArticles).map(art => `
             <article class="news-card">
               <div class="news-card-img-wrap">

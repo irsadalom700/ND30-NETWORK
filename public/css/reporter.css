@@ -766,5 +766,40 @@
   filter: grayscale(0.8);
 }
 
+/* Mobile & Tablet Optimizations */
+@media (max-width: 640px) {
+  .reporter-modal-dialog {
+    max-width: 95vw;
+    max-height: 94vh;
+    border-radius: 12px;
+    margin: 10px auto;
+  }
+  .reporter-modal-header {
+    padding: 14px 16px;
+  }
+  .reporter-modal-body {
+    padding: 16px 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .reporter-modal-title {
+    font-size: 1.1rem;
+  }
+  .reporter-modal-subtitle {
+    font-size: 0.74rem;
+  }
+  .btn-submit-reporter {
+    width: 100%;
+    justify-content: center;
+  }
+  .reporter-modal-footer {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  .form-control {
+    font-size: 16px !important; /* Prevents iOS Safari auto-zoom */
+  }
+}
+
 
 

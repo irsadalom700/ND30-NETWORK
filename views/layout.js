@@ -73,7 +73,12 @@ function renderLayout({
 <html lang="${currentLang}" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>${title || 'ND30 LIVE | Northeast India & National News'}</title>
   <meta name="description" content="${description || 'ND30 LIVE - Leading independent multilingual news portal covering Assam, Northeast India, National and World news.'}">
   <link rel="icon" type="image/png" href="/images/nd30_live_logo.png">
@@ -199,13 +204,13 @@ function renderLayout({
       <div class="nav-actions">
         <!-- Highlighted Advertise With Us CTA Button -->
         <button type="button" class="advertise-cta-btn" id="navAdvertiseBtn" title="Book Advertisement on ND30 LIVE & Influencers">
-          <span class="ad-btn-icon">📢</span> Advertise With Us
+          <span class="ad-btn-icon">📢</span> <span class="nav-btn-label-desktop">Advertise With Us</span><span class="nav-btn-label-mobile">Ads</span>
         </button>
 
         <!-- Highlighted Join us CTA Button (Controlled via Backend Toggle) -->
         ${joinUsEnabled ? `
         <button type="button" class="reporter-cta-btn" id="navActionsReporterBtn" title="Apply to join ND30 LIVE Network">
-          <span class="rep-icon">🎙️</span> Join us
+          <span class="rep-icon">🎙️</span> <span class="nav-btn-label-desktop">Join us</span><span class="nav-btn-label-mobile">Join</span>
         </button>
         ` : ''}
 

@@ -619,6 +619,22 @@
 }
 
 @media (max-width: 640px) {
+  .ad-modal-dialog {
+    max-width: 95vw;
+    max-height: 94vh;
+    border-radius: 12px;
+    margin: 10px auto;
+  }
+  .ad-modal-header {
+    padding: 14px 16px;
+  }
+  .ad-modal-body {
+    padding: 16px 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ad-modal-title {
+    font-size: 1.1rem;
+  }
   .ad-partner-selector {
     grid-template-columns: 1fr;
   }
@@ -631,5 +647,12 @@
   .ad-btn-verify-otp {
     width: 100%;
     justify-content: center;
+  }
+  .ad-btn-submit-booking {
+    width: 100%;
+    justify-content: center;
+  }
+  .ad-form-control {
+    font-size: 16px !important; /* Prevents iOS Safari auto-zoom */
   }
 }

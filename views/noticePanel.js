@@ -287,6 +287,23 @@ function renderNoticePanel(notice) {
           padding: 4px 8px;
         }
       }
+      @media (max-width: 480px) {
+        .nd30-notice-card {
+          padding: 7px 8px;
+          gap: 6px;
+        }
+        .nd30-notice-badge {
+          font-size: 0.65rem;
+          padding: 2px 6px;
+        }
+        .nd30-notice-text {
+          font-size: 0.82rem !important;
+        }
+        .nd30-notice-action-btn {
+          font-size: 0.68rem;
+          padding: 3px 6px;
+        }
+      }
     </style>
 
     <div class="container">
