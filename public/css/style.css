@@ -1657,34 +1657,58 @@ img {
     font-size: 0.72rem;
   }
 
-  /* Sticky Category Navigation */
+  /* Sticky Category Navigation & Mobile Separated CTA Section */
   .category-nav-bar {
     top: 0;
   }
 
   .category-nav-inner {
-    padding: 0 4px;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    gap: 0;
+  }
+
+  .nav-links {
+    width: 100%;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .nav-item a {
-    padding: 12px 13px;
+    padding: 11px 12px;
     font-size: 0.88rem;
   }
 
+  /* Separated Section for Action Buttons on Mobile View */
   .nav-actions {
-    gap: 6px;
-    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 12px 9px 12px;
+    background: rgba(11, 15, 25, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    box-sizing: border-box;
   }
 
-  .advertise-cta-btn {
-    padding: 6px 10px;
-    font-size: 0.74rem;
-  }
-
+  .advertise-cta-btn,
   .reporter-cta-btn {
-    padding: 6px 10px;
-    font-size: 0.74rem;
+    flex: 1;
+    max-width: 220px;
+    justify-content: center;
+    text-align: center;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    border-radius: 22px;
+    white-space: nowrap;
   }
 
   /* Article Header & Typography */
@@ -2014,19 +2038,17 @@ img {
     font-size: 0.82rem;
   }
 
-  .nav-btn-label-desktop {
-    display: none;
-  }
-
-  .nav-btn-label-mobile {
-    display: inline;
+  .nav-actions {
+    gap: 8px;
+    padding: 7px 10px 8px 10px;
   }
 
   .advertise-cta-btn,
   .reporter-cta-btn {
-    padding: 5px 8px;
-    font-size: 0.7rem;
-    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.74rem;
+    border-radius: 22px;
+    gap: 5px;
   }
 
   .header-qr-grid {

@@ -204,13 +204,13 @@ function renderLayout({
       <div class="nav-actions">
         <!-- Highlighted Advertise With Us CTA Button -->
         <button type="button" class="advertise-cta-btn" id="navAdvertiseBtn" title="Book Advertisement on ND30 LIVE & Influencers">
-          <span class="ad-btn-icon">📢</span> <span class="nav-btn-label-desktop">Advertise With Us</span><span class="nav-btn-label-mobile">Ads</span>
+          <span class="ad-btn-icon">📢</span> <span class="nav-btn-label">Advertise With Us</span>
         </button>
 
-        <!-- Highlighted Join us CTA Button (Controlled via Backend Toggle) -->
+        <!-- Highlighted Submit Your Interest CTA Button (Controlled via Backend Toggle) -->
         ${joinUsEnabled ? `
-        <button type="button" class="reporter-cta-btn" id="navActionsReporterBtn" title="Apply to join ND30 LIVE Network">
-          <span class="rep-icon">🎙️</span> <span class="nav-btn-label-desktop">Join us</span><span class="nav-btn-label-mobile">Join</span>
+        <button type="button" class="reporter-cta-btn" id="navActionsReporterBtn" title="Submit Your Interest to join ND30 LIVE Network">
+          <span class="rep-icon">🎙️</span> <span class="nav-btn-label">Submit Your Interest</span>
         </button>
         ` : ''}
 
