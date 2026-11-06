@@ -141,9 +141,14 @@ function renderHomePage(lang = 'as') {
 
       <!-- Sidebar -->
       <aside>
+        <!-- Trending News Section Header (Aligned on the same line as Latest News) -->
+        <div class="section-header">
+          <h3 class="section-title">🔥 ${titles.trending}</h3>
+          <span class="section-link" style="font-size:0.8rem; color:var(--text-subtle);">${currentLang === 'as' ? 'শীৰ্ষ পঠিত' : (currentLang === 'hi' ? 'टॉप खबरें' : 'Top Reads')}</span>
+        </div>
+
         <!-- Trending News Widget -->
         <div class="sidebar-widget">
-          <h4 class="widget-title">🔥 ${titles.trending}</h4>
           <div style="display:flex; flex-direction:column; gap:16px;">
             ${trendingArticles.map((art, idx) => `
               <div style="display:flex; gap:14px; align-items:flex-start;">
