@@ -1,19 +1,92 @@
-const Database = require('better-sqlite3');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const dbPath = path.join(__dirname, 'nd30_news.db');
-const db = new Database(dbPath);
 
-// Enable WAL mode and foreign keys for high concurrency & integrity
-try {
-  db.pragma('journal_mode = WAL');
-} catch (e) {
-  try { db.pragma('journal_mode = DELETE'); } catch (e2) {}
+/**
+ * Universal Dual-Engine SQLite Connection
+ * 1. Attempts better-sqlite3 native driver.
+ * 2. If native bindings fail (e.g. Hostinger / CloudLinux GLIBC_2.29 mismatch),
+ *    automatically falls back to Node.js built-in node:sqlite (zero GLIBC dependencies!).
+ */
+function createDatabaseConnection() {
+  // Strategy 1: Try better-sqlite3 native driver
+  try {
+    const Database = require('better-sqlite3');
+    const bDb = new Database(dbPath);
+    try { bDb.pragma('journal_mode = WAL'); } catch (e) { try { bDb.pragma('journal_mode = DELETE'); } catch (e2) {} }
+    try { bDb.pragma('foreign_keys = ON'); } catch (e) {}
+    console.log('✅ SQLite Database connected via better-sqlite3 native driver');
+    return bDb;
+  } catch (nativeErr) {
+    console.warn(`⚠️ [Database] better-sqlite3 native addon failed (${nativeErr.message}).`);
+    console.warn('🔄 Switching to Node.js built-in node:sqlite engine (immune to GLIBC mismatches)...');
+
+    // Strategy 2: Node.js 22+ built-in node:sqlite engine (DatabaseSync)
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const syncDb = new DatabaseSync(dbPath);
+      try { syncDb.exec('PRAGMA journal_mode = WAL'); } catch (e) { try { syncDb.exec('PRAGMA journal_mode = DELETE'); } catch (e2) {} }
+      try { syncDb.exec('PRAGMA foreign_keys = ON'); } catch (e) {}
+
+      function sanitizeParams(params) {
+        if (!params || params.length === 0) return [];
+        if (params.length === 1 && typeof params[0] === 'object' && params[0] !== null) {
+          if (Array.isArray(params[0])) {
+            return params[0].map(v => (v === undefined ? null : v));
+          }
+          const cleanObj = {};
+          for (const [k, v] of Object.entries(params[0])) {
+            cleanObj[k] = v === undefined ? null : v;
+          }
+          return [cleanObj];
+        }
+        return params.map(v => (v === undefined ? null : v));
+      }
+
+      console.log('✅ SQLite Database successfully connected via Node.js built-in node:sqlite engine!');
+
+      return {
+        pragma(str) {
+          try {
+            return syncDb.exec('PRAGMA ' + str);
+          } catch (e) {
+            return null;
+          }
+        },
+        exec(sql) {
+          return syncDb.exec(sql);
+        },
+        prepare(sql) {
+          const stmt = syncDb.prepare(sql);
+          return {
+            all(...params) {
+              const clean = sanitizeParams(params);
+              return stmt.all(...clean);
+            },
+            get(...params) {
+              const clean = sanitizeParams(params);
+              return stmt.get(...clean);
+            },
+            run(...params) {
+              const clean = sanitizeParams(params);
+              const result = stmt.run(...clean);
+              return {
+                changes: Number(result.changes || 0),
+                lastInsertRowid: Number(result.lastInsertRowid || 0)
+              };
+            }
+          };
+        }
+      };
+    } catch (syncErr) {
+      console.error('❌ [Database Fatal] Both better-sqlite3 and node:sqlite failed:', syncErr.message);
+      throw nativeErr;
+    }
+  }
 }
-try {
-  db.pragma('foreign_keys = ON');
-} catch (e) {}
+
+const db = createDatabaseConnection();
 
 function initDatabase() {
   db.exec(`
