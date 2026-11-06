@@ -9,8 +9,10 @@ const {
   getAllInfluencers,
   getAllPromotionTypes,
   getAdvertisementSettings,
-  formatFollowersText
+  formatFollowersText,
+  getAllSlides
 } = require('../../services/advertisementService');
+const { renderAdSliderHtml } = require('../adSlider');
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -22,12 +24,13 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-function renderAdvertisementAdmin(statusFilter = 'all') {
+function renderAdvertisementAdmin(statusFilter = 'all', query = {}) {
   const bookings = getAllBookings(statusFilter);
   const allBookings = getAllBookings('all');
   const influencers = getAllInfluencers();
   const promoTypes = getAllPromotionTypes();
   const settings = getAdvertisementSettings();
+  const slides = getAllSlides();
 
   const totalBookings = allBookings.length;
   const pendingCount = allBookings.filter(b => b.status.toLowerCase() === 'pending').length;
@@ -90,18 +93,33 @@ function renderAdvertisementAdmin(statusFilter = 'all') {
       </div>
     </div>
 
+    ${query.msg ? `
+      <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #86efac; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; font-size: 0.88rem; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">✅</span> <strong>Success:</strong> ${escapeHtml(query.msg)}
+      </div>
+    ` : ''}
+
+    ${query.error ? `
+      <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; font-size: 0.88rem; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">⚠️</span> <strong>Error:</strong> ${escapeHtml(query.error)}
+      </div>
+    ` : ''}
+
     <!-- Navigation Sub-Tabs -->
     <div style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px;">
-      <button type="button" class="btn btn-tab active" onclick="switchTab('tabBookings', this)">
+      <button type="button" class="btn btn-tab active" onclick="switchTab('tabBookings', this)" id="btnTabBookings">
         <span>📑</span> All Bookings (${bookings.length})
       </button>
-      <button type="button" class="btn btn-tab" onclick="switchTab('tabPricing', this)">
+      <button type="button" class="btn btn-tab" onclick="switchTab('tabSlider', this)" id="btnTabSlider">
+        <span>🖼️</span> Sidebar Photo Slider (${slides.length})
+      </button>
+      <button type="button" class="btn btn-tab" onclick="switchTab('tabPricing', this)" id="btnTabPricing">
         <span>💰</span> Promotion Types & Pricing (${promoTypes.length})
       </button>
-      <button type="button" class="btn btn-tab" onclick="switchTab('tabInfluencers', this)">
+      <button type="button" class="btn btn-tab" onclick="switchTab('tabInfluencers', this)" id="btnTabInfluencers">
         <span>🌟</span> Registered Influencers (${influencers.length})
       </button>
-      <button type="button" class="btn btn-tab" onclick="switchTab('tabSettings', this)">
+      <button type="button" class="btn btn-tab" onclick="switchTab('tabSettings', this)" id="btnTabSettings">
         <span>⚙️</span> API & Module Controls
       </button>
     </div>
@@ -226,6 +244,183 @@ function renderAdvertisementAdmin(statusFilter = 'all') {
                   </tr>
                   `;
                 }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    </div>
+
+    <!-- TAB: SIDEBAR PHOTO SLIDER (ADVERTISEMENT) -->
+    <div id="tabSlider" class="admin-tab-pane" style="display:none;">
+      <!-- Section Banner -->
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+            <span>🖼️</span> Homepage Sidebar Photo Slider (ADVERTISEMENT)
+          </h3>
+          <p style="color: #94a3b8; font-size: 0.84rem; margin: 0; max-width: 720px; line-height: 1.5;">
+            Upload promotional banners and photos displayed in the dark rounded <code>ADVERTISEMENT</code> box on the homepage sidebar. Set click links, toggle visibility, and control slide ordering.
+          </p>
+        </div>
+        <a href="/as/" target="_blank" class="btn btn-secondary" style="font-size: 0.82rem; padding: 8px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>🌐</span> Preview on Homepage ↗
+        </a>
+      </div>
+
+      <!-- Two column grid: Upload form + Live preview -->
+      <div style="display: grid; grid-template-columns: minmax(320px, 1.2fr) minmax(300px, 0.8fr); gap: 24px; margin-bottom: 32px; align-items: start;">
+        
+        <!-- Upload Form -->
+        <div style="background: var(--admin-card-bg, #1e293b); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 22px;">
+          <h4 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            <span>➕</span> Upload New Photo Slide
+          </h4>
+
+          <form action="/admin/advertisements/slides/add" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">
+                Slide Image * <span style="color: #38bdf8; font-weight: normal;">(JPG, PNG, WEBP, GIF - Max 5MB)</span>
+              </label>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="file" name="slide_image" accept="image/*" id="slideFileInput" onchange="previewSlideUpload(this)" style="flex: 1; min-width: 200px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem;">
+              </div>
+              <div style="margin-top: 8px; font-size: 0.74rem; color: #64748b;">
+                Or paste an external Image URL below:
+              </div>
+              <input type="text" name="image_url" id="slideUrlInput" placeholder="https://example.com/banner.jpg" style="width: 100%; margin-top: 4px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem;" oninput="previewSlideUrl(this.value)">
+            </div>
+
+            <!-- Image Thumbnail Live Preview in Form -->
+            <div id="slideUploadPreviewBox" style="display: none; background: #0f172a; border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 10px; text-align: center;">
+              <div style="font-size: 0.72rem; color: #38bdf8; margin-bottom: 6px; font-weight: 600;">Selected Image Preview</div>
+              <img id="slideUploadPreviewImg" src="" alt="Slide Preview" style="max-height: 140px; max-width: 100%; border-radius: 6px; object-fit: cover;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Slide Title / Client Name *</label>
+              <input type="text" name="title" required placeholder="e.g. Special Festive Offer | Brand Name" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Target Link URL <span style="color: #64748b;">(Optional - opens when clicked)</span></label>
+              <input type="text" name="link_url" placeholder="https://wa.me/91XXXXXXXXXX or https://brandwebsite.com" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Caption / Subtext <span style="color: #64748b;">(Optional tagline shown over slide)</span></label>
+              <input type="text" name="caption" placeholder="e.g. Call 9876543210 for best deals across Assam" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Sort Order</label>
+                <input type="number" name="sort_order" value="${slides.length + 1}" min="0" step="1" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 9px 12px; font-size: 0.86rem;">
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">Slide Status</label>
+                <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; color: #ffffff; font-size: 0.85rem;">
+                  <input type="checkbox" name="is_active" value="1" checked style="width: 18px; height: 18px; accent-color: #22c55e;">
+                  <span>Active & Visible immediately</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px 18px; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>🚀</span> Upload & Publish Slide
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Live Preview Box -->
+        <div>
+          <div style="background: var(--admin-card-bg, #1e293b); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>📱</span> Live Frontend Preview
+              </h4>
+              <span class="badge badge-primary" style="font-size: 0.68rem; text-transform: uppercase;">Realtime</span>
+            </div>
+            <p style="font-size: 0.76rem; color: #94a3b8; margin: 0 0 14px 0;">
+              This is how the advertisement slider looks to visitors on the homepage sidebar:
+            </p>
+
+            <div style="max-width: 380px; margin: 0 auto;">
+              ${renderAdSliderHtml(slides)}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Existing Slides Table -->
+      <div style="background: var(--admin-card-bg, #1e293b); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <h4 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>📸</span> All Uploaded Slides (${slides.length})
+          </h4>
+          <span style="font-size: 0.78rem; color: #94a3b8;">${slides.filter(s => s.is_active === 1).length} active on live site</span>
+        </div>
+
+        ${slides.length === 0 ? `
+          <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
+            <div style="font-size: 2.2rem; margin-bottom: 8px;">🖼️</div>
+            <div style="font-size: 1rem; font-weight: 600; color: #ffffff;">No slides uploaded yet</div>
+            <p style="font-size: 0.82rem; margin-top: 4px;">Use the form above to upload your first advertisement banner or promotional photo.</p>
+          </div>
+        ` : `
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.84rem;">
+              <thead>
+                <tr style="background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <th style="padding: 12px 16px; width: 100px;">Photo</th>
+                  <th style="padding: 12px 16px;">Slide Details</th>
+                  <th style="padding: 12px 16px;">Target Link</th>
+                  <th style="padding: 12px 16px; text-align: center;">Order</th>
+                  <th style="padding: 12px 16px; text-align: center;">Status (On/Off)</th>
+                  <th style="padding: 12px 16px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${slides.map(slide => `
+                  <tr id="slide-row-${slide.id}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 16px;">
+                      <div style="width: 90px; height: 55px; border-radius: 6px; overflow: hidden; background: #0a0f18; border: 1px solid rgba(255,255,255,0.1);">
+                        <img src="${escapeHtml(slide.image_url)}" alt="${escapeHtml(slide.title)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/images/nd30_live_logo_solid.png'">
+                      </div>
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      <strong style="color: #ffffff; font-size: 0.9rem; display: block;">${escapeHtml(slide.title)}</strong>
+                      ${slide.caption ? `<div style="font-size: 0.76rem; color: #94a3b8; margin-top: 3px;">${escapeHtml(slide.caption)}</div>` : ''}
+                      <div style="font-size: 0.7rem; color: #64748b; margin-top: 3px;">Added: ${slide.created_at || 'Recently'}</div>
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      ${slide.link_url ? `
+                        <a href="${escapeHtml(slide.link_url)}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; word-break: break-all; max-width: 200px;">
+                          <span>🔗</span> ${escapeHtml(slide.link_url)}
+                        </a>
+                      ` : `
+                        <span style="color: #64748b; font-size: 0.78rem;">No link (Display only)</span>
+                      `}
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center; color: #cbd5e1; font-weight: 700;">
+                      ${slide.sort_order || 0}
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center;">
+                      <button type="button" onclick="handleToggleSlide(${slide.id}, ${slide.is_active === 1 ? 0 : 1})" id="btn-toggle-slide-${slide.id}" class="badge ${slide.is_active === 1 ? 'badge-success' : 'badge-outline'}" style="cursor: pointer; border: 1px solid ${slide.is_active === 1 ? '#22c55e' : '#64748b'}; padding: 5px 12px; font-size: 0.74rem;">
+                        ${slide.is_active === 1 ? '🟢 ACTIVE' : '⚪ INACTIVE'}
+                      </button>
+                    </td>
+                    <td style="padding: 12px 16px; text-align: right;">
+                      <button type="button" onclick="handleDeleteSlide(${slide.id}, '${escapeHtml(slide.title)}')" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444; border-radius: 6px; padding: 6px 12px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>🗑️</span> Delete
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
               </tbody>
             </table>
           </div>
@@ -780,6 +975,98 @@ function renderAdvertisementAdmin(statusFilter = 'all') {
         alert('Failed: ' + e.message);
       }
     }
+
+    // Sidebar Slide Handlers
+    function previewSlideUpload(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById('slideUploadPreviewImg');
+          if (img) img.src = e.target.result;
+          const box = document.getElementById('slideUploadPreviewBox');
+          if (box) box.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function previewSlideUrl(url) {
+      if (url && url.trim().length > 4) {
+        const img = document.getElementById('slideUploadPreviewImg');
+        if (img) img.src = url.trim();
+        const box = document.getElementById('slideUploadPreviewBox');
+        if (box) box.style.display = 'block';
+      }
+    }
+
+    async function handleToggleSlide(id, newStatus) {
+      try {
+        const res = await fetch('/admin/advertisements/slides/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, is_active: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const btn = document.getElementById('btn-toggle-slide-' + id);
+          if (btn) {
+            if (data.is_active === 1) {
+              btn.className = 'badge badge-success';
+              btn.style.borderColor = '#22c55e';
+              btn.innerHTML = '🟢 ACTIVE';
+              btn.setAttribute('onclick', 'handleToggleSlide(' + id + ', 0)');
+            } else {
+              btn.className = 'badge badge-outline';
+              btn.style.borderColor = '#64748b';
+              btn.innerHTML = '⚪ INACTIVE';
+              btn.setAttribute('onclick', 'handleToggleSlide(' + id + ', 1)');
+            }
+          }
+        } else {
+          alert('Failed to toggle slide status: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Toggle error: ' + err.message);
+      }
+    }
+
+    async function handleDeleteSlide(id, title) {
+      if (!confirm('Are you sure you want to delete slide "' + title + '"?')) return;
+      try {
+        const res = await fetch('/admin/advertisements/slides/delete/' + id, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          const row = document.getElementById('slide-row-' + id);
+          if (row) row.remove();
+        } else {
+          alert('Delete failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Delete error: ' + err.message);
+      }
+    }
+
+    // Auto-switch to tab if specified in URL query
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      if (tab === 'slider') {
+        const btn = document.getElementById('btnTabSlider');
+        if (btn) switchTab('tabSlider', btn);
+      } else if (tab === 'pricing') {
+        const btn = document.getElementById('btnTabPricing');
+        if (btn) switchTab('tabPricing', btn);
+      } else if (tab === 'influencers') {
+        const btn = document.getElementById('btnTabInfluencers');
+        if (btn) switchTab('tabInfluencers', btn);
+      } else if (tab === 'settings') {
+        const btn = document.getElementById('btnTabSettings');
+        if (btn) switchTab('tabSettings', btn);
+      }
+    });
   </script>
   `;
 }

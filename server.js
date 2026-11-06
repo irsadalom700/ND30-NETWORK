@@ -81,7 +81,13 @@ const {
   deletePromotionType,
   addInfluencer,
   updateInfluencer,
-  deleteInfluencer
+  deleteInfluencer,
+  uploadAdSlideImage,
+  getAllSlides,
+  getActiveSlides,
+  createSlide,
+  toggleSlideStatus,
+  deleteSlide
 } = require('./services/advertisementService');
 const {
   sendWhatsAppOtp,
@@ -839,8 +845,8 @@ app.post('/api/advertisements/verify-otp', (req, res) => {
 // Admin Advertisement Hub View
 app.get('/admin/advertisements', checkModule('advertisements'), (req, res) => {
   const status = req.query.status || 'all';
-  const content = renderAdvertisementAdmin(status);
-  res.send(renderAdminLayout({ title: 'Advertisement Bookings', activeNav: 'advertisements', content, currentUser: req.user }));
+  const content = renderAdvertisementAdmin(status, req.query);
+  res.send(renderAdminLayout({ title: 'Advertisement Bookings & Slider', activeNav: 'advertisements', content, currentUser: req.user }));
 });
 
 // Admin Booking Status Update
@@ -922,6 +928,48 @@ app.delete('/api/admin/advertisements/influencers/:id', checkModule('advertiseme
     res.json({ success: true, id });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Sidebar Photo Slider (ADVERTISEMENT) Routes
+app.post('/admin/advertisements/slides/add', checkModule('advertisements'), (req, res) => {
+  uploadAdSlideImage(req, res, (err) => {
+    if (err) {
+      console.error('[Slide Upload Error]', err.message);
+      return res.redirect(`/admin/advertisements?tab=slider&error=${encodeURIComponent(err.message)}`);
+    }
+    try {
+      createSlide(req.body, req.file);
+      res.redirect('/admin/advertisements?tab=slider&msg=' + encodeURIComponent('Slide uploaded and published successfully!'));
+    } catch (createErr) {
+      console.error('[Slide Create Error]', createErr.message);
+      res.redirect(`/admin/advertisements?tab=slider&error=${encodeURIComponent(createErr.message)}`);
+    }
+  });
+});
+
+app.post('/admin/advertisements/slides/toggle', checkModule('advertisements'), (req, res) => {
+  try {
+    const { id, is_active } = req.body;
+    const result = toggleSlideStatus(id, is_active);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/admin/advertisements/slides/delete/:id', checkModule('advertisements'), (req, res) => {
+  try {
+    deleteSlide(req.params.id);
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.json({ success: true });
+    }
+    res.redirect('/admin/advertisements?tab=slider&msg=' + encodeURIComponent('Slide deleted successfully!'));
+  } catch (err) {
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    res.redirect(`/admin/advertisements?tab=slider&error=${encodeURIComponent(err.message)}`);
   }
 });
 

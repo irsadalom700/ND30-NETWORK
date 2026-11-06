@@ -486,6 +486,19 @@ function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Sidebar Advertisement Photo Slider
+    CREATE TABLE IF NOT EXISTS sidebar_slides (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT DEFAULT '',
+      image_url TEXT NOT NULL,
+      link_url TEXT DEFAULT '',
+      caption TEXT DEFAULT '',
+      sort_order INTEGER DEFAULT 1,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Users & RBAC Table (Admin, Approved Editor, Promoter)
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -599,6 +612,36 @@ function initDatabase() {
         1
       )
     `).run();
+  }
+
+  // Seed default sidebar advertisement slides if empty
+  const slideCount = db.prepare('SELECT COUNT(*) as count FROM sidebar_slides').get().count;
+  if (slideCount === 0) {
+    const insertSlide = db.prepare(`
+      INSERT INTO sidebar_slides (title, image_url, link_url, caption, sort_order, is_active)
+      VALUES (?, ?, ?, ?, ?, 1)
+    `);
+    insertSlide.run(
+      'ND30 LIVE Broadcast Studio',
+      '/uploads/nd30_news_banner.jpg',
+      '/as/',
+      'Advertise with Northeast India\'s Leading Digital Newsroom',
+      1
+    );
+    insertSlide.run(
+      'Brahmaputra Regional Coverage',
+      '/uploads/brahmaputra_bridge.jpg',
+      '/as/',
+      'Connect with 500,000+ Daily Verified Viewers Across Assam',
+      2
+    );
+    insertSlide.run(
+      'ND30 3D Commercial Spotlight',
+      '/images/nd30_live_logo_solid.png',
+      '/as/',
+      'High-Impact Digital Sponsorships & Video Ad Placements',
+      3
+    );
   }
 
   // Seed default promotion types for ND30 Live if empty

@@ -3,9 +3,12 @@
  */
 
 const { db } = require('../database/db');
+const { renderAdSliderHtml } = require('./adSlider');
+const { getActiveSlides } = require('../services/advertisementService');
 
 function renderHomePage(lang = 'as') {
   const currentLang = lang || 'as';
+  const adSlides = getActiveSlides();
 
   // Fetch featured articles
   const featuredArticles = db.prepare(`
@@ -170,21 +173,8 @@ function renderHomePage(lang = 'as') {
           `}
         </div>` : ''}
 
-        <!-- Live IFTTT & Social Automation Badge -->
-        <div class="sidebar-widget" style="background:linear-gradient(135deg, rgba(220,38,38,0.1), rgba(15,23,42,0.9)); border-color:var(--border-highlight);">
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-            <span style="font-size:1.3rem;">⚡</span>
-            <h4 style="font-size:1rem; font-weight:700; color:#fff;">ND30 Multi-Channel Syndication</h4>
-          </div>
-          <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5; margin-bottom:14px;">
-            Connected with IFTTT Automation, Meta Graph API & Telegram feeds for real-time multilingual broadcasting across Assam & India.
-          </p>
-          <div style="display:flex; gap:8px;">
-            <span class="badge badge-success">IFTTT Live</span>
-            <span class="badge badge-info">Meta API Connected</span>
-            <span class="badge badge-purple">RSS 2.0</span>
-          </div>
-        </div>
+        <!-- Sidebar Advertisement Photo Slider (Replaces Multi-Channel Syndication) -->
+        ${renderAdSliderHtml(adSlides)}
       </aside>
     </div>
   </div>`;

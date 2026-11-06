@@ -4,6 +4,9 @@
  * pricing calculation, WhatsApp/Email alerts, and admin dashboard management.
  */
 
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { db } = require('../database/db');
 const {
   sendBookingConfirmationWhatsApp,
@@ -465,6 +468,123 @@ function deletePromotionType(id) {
   db.prepare('DELETE FROM ad_promotion_types WHERE id = ?').run(id);
 }
 
+// Upload directory for advertisement slides
+const adUploadDir = path.join(__dirname, '..', 'public', 'uploads', 'ads');
+try {
+  if (!fs.existsSync(adUploadDir)) {
+    fs.mkdirSync(adUploadDir, { recursive: true });
+  }
+} catch (e) {
+  // Directory might already exist or sandbox permission
+}
+
+const adStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, adUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const cleanBase = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
+    cb(null, `ad_slide_${Date.now()}_${cleanBase}${ext}`);
+  }
+});
+
+const uploadAdSlideImage = multer({
+  storage: adStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid image format "${ext}". Allowed: JPG, PNG, WEBP, GIF, SVG.`));
+    }
+  }
+}).single('slide_image');
+
+function getAllSlides() {
+  try {
+    return db.prepare('SELECT * FROM sidebar_slides ORDER BY sort_order ASC, id DESC').all();
+  } catch (err) {
+    console.error('[getAllSlides Error]', err.message);
+    return [];
+  }
+}
+
+function getActiveSlides() {
+  try {
+    return db.prepare('SELECT * FROM sidebar_slides WHERE is_active = 1 ORDER BY sort_order ASC, id DESC').all();
+  } catch (err) {
+    console.error('[getActiveSlides Error]', err.message);
+    return [];
+  }
+}
+
+function getSlideById(id) {
+  try {
+    return db.prepare('SELECT * FROM sidebar_slides WHERE id = ?').get(id);
+  } catch (err) {
+    console.error('[getSlideById Error]', err.message);
+    return null;
+  }
+}
+
+function createSlide(data, file) {
+  try {
+    let imageUrl = data.image_url || '';
+    if (file && file.filename) {
+      imageUrl = `/uploads/ads/${file.filename}`;
+    }
+    if (!imageUrl) {
+      throw new Error('Please select an image file or enter an image URL.');
+    }
+    const title = (data.title || '').trim();
+    const linkUrl = (data.link_url || '').trim();
+    const caption = (data.caption || '').trim();
+    const sortOrder = parseInt(data.sort_order, 10) || 1;
+    const isActive = (data.is_active === '1' || data.is_active === 1 || data.is_active === true || data.is_active === 'on') ? 1 : 0;
+
+    const res = db.prepare(`
+      INSERT INTO sidebar_slides (title, image_url, link_url, caption, sort_order, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(title, imageUrl, linkUrl, caption, sortOrder, isActive);
+
+    return getSlideById(res.lastInsertRowid);
+  } catch (err) {
+    console.error('[createSlide Error]', err.message);
+    throw err;
+  }
+}
+
+function toggleSlideStatus(id, isActive) {
+  try {
+    const val = isActive ? 1 : 0;
+    db.prepare('UPDATE sidebar_slides SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(val, id);
+    return { success: true, is_active: val };
+  } catch (err) {
+    console.error('[toggleSlideStatus Error]', err.message);
+    throw err;
+  }
+}
+
+function deleteSlide(id) {
+  try {
+    const slide = getSlideById(id);
+    if (slide && slide.image_url && slide.image_url.startsWith('/uploads/ads/')) {
+      const full = path.join(__dirname, '..', 'public', slide.image_url);
+      if (fs.existsSync(full)) {
+        try { fs.unlinkSync(full); } catch (e) {}
+      }
+    }
+    db.prepare('DELETE FROM sidebar_slides WHERE id = ?').run(id);
+    return true;
+  } catch (err) {
+    console.error('[deleteSlide Error]', err.message);
+    throw err;
+  }
+}
+
 module.exports = {
   formatFollowersText,
   getAdvertisementSettings,
@@ -482,6 +602,13 @@ module.exports = {
   deleteInfluencer,
   addPromotionType,
   updatePromotionType,
-  deletePromotionType
+  deletePromotionType,
+  uploadAdSlideImage,
+  getAllSlides,
+  getActiveSlides,
+  getSlideById,
+  createSlide,
+  toggleSlideStatus,
+  deleteSlide
 };
 
