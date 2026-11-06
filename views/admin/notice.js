@@ -99,27 +99,27 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       </div>
 
       <!-- Preview Canvas -->
-      <div id="previewCard" style="background:linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%); color:#ffffff; border-radius:10px; padding:10px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 6px 20px rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.18); min-height:50px; overflow:hidden;">
-        <!-- Badge -->
-        <div id="previewBadge" style="background:${n.badge_bg}; color:${n.badge_color}; font-size:0.76rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; padding:4px 10px; border-radius:9999px; white-space:nowrap; box-shadow:0 0 10px rgba(220, 38, 38, 0.45); display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">
+      <div id="previewCard" style="background:linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%); color:#ffffff; border-radius:10px; padding:10px 18px; display:flex; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.18); min-height:50px; overflow:hidden;">
+        <!-- Badge (Hidden) -->
+        <div id="previewBadge" style="display:none !important;">
           <span style="width:7px; height:7px; background:#fff; border-radius:50%; display:inline-block; animation:nd30NoticeDotPulse 1.4s ease-in-out infinite;"></span>
           <span id="previewBadgeText">${escapeHtml(n.badge_text)}</span>
         </div>
 
         <!-- Animated Message Text -->
-        <div id="previewBody" style="flex:1; overflow:hidden; display:flex; align-items:center;">
+        <div id="previewBody" style="flex:1; width:100%; overflow:hidden; display:flex; align-items:center;">
           <div id="previewText" class="notice-anim-${n.animation_type}" style="font-size:1.05rem; font-weight:${n.font_weight}; color:${n.text_color}; line-height:1.4;">
             ${escapeHtml(n.message)}
           </div>
         </div>
 
-        <!-- Link Button -->
-        <span id="previewActionBtn" style="background:rgba(255,255,255,0.22); color:#ffffff; padding:5px 12px; border-radius:6px; font-size:0.8rem; font-weight:700; white-space:nowrap; border:1px solid rgba(255,255,255,0.35); flex-shrink:0; ${n.link_url ? 'display:inline-block;' : 'display:none;'}">
+        <!-- Link Button (Hidden) -->
+        <span id="previewActionBtn" style="display:none !important;">
           ${escapeHtml(n.link_text || 'পঢ়ক / Read More ➜')}
         </span>
 
-        <!-- Dismiss Close Button -->
-        <span id="previewCloseBtn" style="color:rgba(255,255,255,0.7); font-size:1.1rem; line-height:1; cursor:pointer; flex-shrink:0; ${n.show_close_button ? 'display:block;' : 'display:none;'}">
+        <!-- Dismiss Close Button (Hidden) -->
+        <span id="previewCloseBtn" style="display:none !important;">
           &times;
         </span>
       </div>
@@ -151,31 +151,16 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
           <!-- Hidden Image URL (Empty - Photo Section Hidden) -->
           <input type="hidden" name="image_url" id="imageUrlInput" value="">
 
-          <!-- Badge Text & Styling -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">Badge Text (টেগ)</label>
-              <input type="text" name="badge_text" id="inputBadgeText" value="${escapeHtml(n.badge_text)}" oninput="updateLivePreview()" style="width:100%; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:8px 12px; font-size:0.88rem;" placeholder="📢 বিশেষ জাননী">
-            </div>
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">Badge Color (ৰং)</label>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <input type="color" name="badge_bg" id="inputBadgeBg" value="${n.badge_bg || '#dc2626'}" oninput="updateLivePreview()" style="width:38px; height:36px; padding:0; border:none; border-radius:6px; cursor:pointer; background:none;">
-                <input type="text" id="badgeBgText" value="${n.badge_bg || '#dc2626'}" oninput="syncColorInput('badgeBgText', 'inputBadgeBg')" style="flex:1; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:6px 10px; font-size:0.82rem;">
-              </div>
-            </div>
-          </div>
+          <!-- Hidden Badge Settings (Badge hidden from notice bar) -->
+          <input type="hidden" name="badge_text" id="inputBadgeText" value="${escapeHtml(n.badge_text || '📢 বিশেষ জাননী')}">
+          <input type="hidden" name="badge_bg" id="inputBadgeBg" value="${n.badge_bg || '#dc2626'}">
+          <input type="hidden" name="badge_color" value="${n.badge_color || '#ffffff'}">
 
-          <!-- Optional Link URL & Text -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">Target Link URL (ঐচ্ছিক লিংক)</label>
-              <input type="text" name="link_url" id="inputLinkUrl" value="${escapeHtml(n.link_url)}" oninput="updateLivePreview()" style="width:100%; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:8px 12px; font-size:0.85rem;" placeholder="/as/article/... or https://...">
-            </div>
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">Link Button Label</label>
-              <input type="text" name="link_text" id="inputLinkText" value="${escapeHtml(n.link_text)}" oninput="updateLivePreview()" style="width:100%; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:8px 12px; font-size:0.85rem;" placeholder="পঢ়ক / Read More ➜">
-            </div>
+          <!-- Optional Link URL -->
+          <div style="margin-bottom:18px;">
+            <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--admin-text); margin-bottom:6px;">Target Link URL (ঐচ্ছিক লিংক - Notice Destination)</label>
+            <input type="text" name="link_url" id="inputLinkUrl" value="${escapeHtml(n.link_url)}" oninput="updateLivePreview()" style="width:100%; background:var(--admin-input-bg); color:#ffffff; border:1px solid var(--admin-border); border-radius:6px; padding:8px 12px; font-size:0.85rem;" placeholder="/as/article/... or https://...">
+            <input type="hidden" name="link_text" id="inputLinkText" value="${escapeHtml(n.link_text || '')}">
           </div>
         </div>
 
@@ -304,13 +289,8 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
             </div>
           </div>
 
-          <!-- Allow Close Button Checkbox -->
-          <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--admin-border);">
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--admin-text); cursor:pointer;">
-              <input type="checkbox" name="show_close_button" id="inputCloseBtn" value="1" ${n.show_close_button ? 'checked' : ''} onchange="updateLivePreview()" style="width:16px; height:16px; accent-color:#dc2626;">
-              <span>Allow readers to dismiss / close the notice (shows &times; icon on frontend)</span>
-            </label>
-          </div>
+          <!-- Allow Close Button (Hidden - Dismiss button removed from notice banner) -->
+          <input type="hidden" name="show_close_button" id="inputCloseBtn" value="0">
         </div>
       </div>
 
@@ -494,9 +474,9 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       // Update Card Background
       document.getElementById('previewCard').style.background = themes[currentTheme] || themes['crimson-alert'];
 
-      // Update Badge
-      document.getElementById('previewBadgeText').textContent = badgeText;
-      document.getElementById('previewBadge').style.background = badgeBg;
+      // Ensure Badge remains hidden
+      var badgeEl = document.getElementById('previewBadge');
+      if (badgeEl) badgeEl.style.display = 'none';
 
       // Update Text & Animation
       var textEl = document.getElementById('previewText');
@@ -506,17 +486,13 @@ function renderNoticeAdmin({ notice, message = '', error = '', currentUser = nul
       textEl.style.fontSize = fontSizes[fontSizeKey] || '1.05rem';
       textEl.style.fontWeight = fontWeight;
 
-      // Update Action Button
+      // Ensure Action Button remains hidden
       var btn = document.getElementById('previewActionBtn');
-      if (linkUrl) {
-        btn.style.display = 'inline-block';
-        btn.textContent = linkText;
-      } else {
-        btn.style.display = 'none';
-      }
+      if (btn) btn.style.display = 'none';
 
-      // Update Close Button
-      document.getElementById('previewCloseBtn').style.display = showClose ? 'block' : 'none';
+      // Ensure Close Button remains hidden
+      var closeBtn = document.getElementById('previewCloseBtn');
+      if (closeBtn) closeBtn.style.display = 'none';
     }
 
     // Quick Live Ajax Toggle

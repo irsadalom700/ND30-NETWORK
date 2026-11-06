@@ -72,36 +72,19 @@ function renderNoticePanel(notice) {
         border-radius: 10px;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.16);
-        padding: 9px 14px;
+        padding: 9px 18px;
         display: flex;
         align-items: center;
-        gap: 12px;
         position: relative;
         overflow: hidden;
       }
-      .nd30-notice-badge {
-        background: ${badgeBg};
-        color: ${badgeColor};
-        font-size: 0.76rem;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        padding: 4px 10px;
-        border-radius: 9999px;
-        white-space: nowrap;
-        box-shadow: 0 0 12px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
+      .nd30-notice-badge,
+      .nd30-notice-action-btn,
+      .nd30-notice-close-btn {
+        display: none !important;
       }
       .nd30-notice-pulse-dot {
-        width: 7px;
-        height: 7px;
-        background: #ffffff;
-        border-radius: 50%;
-        display: inline-block;
-        animation: nd30NoticeDotPulse 1.4s ease-in-out infinite;
+        display: none !important;
       }
       @keyframes nd30NoticeDotPulse {
         0%, 100% { transform: scale(1); opacity: 1; }
@@ -308,14 +291,9 @@ function renderNoticePanel(notice) {
 
     <div class="container">
       <div class="nd30-notice-card">
-        <!-- Notice Badge -->
-        <div class="nd30-notice-badge">
-          <span class="nd30-notice-pulse-dot"></span>
-          <span>${badgeText}</span>
-        </div>
-
         <!-- Animated Notice Body -->
         <div class="nd30-notice-body">
+          ${linkUrl ? `<a href="${linkUrl}" style="color:inherit; text-decoration:none; display:flex; align-items:center; width:100%; min-width:0; overflow:hidden;">` : ''}
           ${animType === 'typewriter' ? `
             <span id="nd30TypewriterNotice" class="nd30-notice-text notice-anim-typewriter" data-text="${escapeHtml(rawMessage)}"></span><span class="notice-anim-typewriter-cursor">|</span>
           ` : `
@@ -323,21 +301,8 @@ function renderNoticePanel(notice) {
               ${messageSafe}
             </div>
           `}
+          ${linkUrl ? `</a>` : ''}
         </div>
-
-        <!-- Action Link Button (if configured) -->
-        ${linkUrl ? `
-          <a href="${linkUrl}" class="nd30-notice-action-btn">
-            ${linkText}
-          </a>
-        ` : ''}
-
-        <!-- Dismiss / Close Button -->
-        ${showClose ? `
-          <button type="button" class="nd30-notice-close-btn" onclick="document.getElementById('nd30NoticePanel').style.display='none'; try{sessionStorage.setItem('nd30_notice_closed_${notice.id}', '1');}catch(e){}" title="Close Notice" aria-label="Close Notice">
-            &times;
-          </button>
-        ` : ''}
       </div>
     </div>
 
