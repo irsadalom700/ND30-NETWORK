@@ -301,24 +301,22 @@ function renderLayout({
           </ul>
         </div>
 
+        <!-- Registered Office (Animated) -->
         <div>
-          <h4 class="footer-col-title">Syndication & Feeds</h4>
-          <ul class="footer-links">
-            <li><a href="/${currentLang}/rss.xml">📡 RSS Feed (${currentLang.toUpperCase()})</a></li>
-            <li><a href="/sitemap.xml">🗺️ Master XML Sitemap</a></li>
-            <li><a href="/${currentLang}/sitemap.xml">📄 ${currentLang.toUpperCase()} Sitemap</a></li>
-            <li><a href="/news-sitemap.xml">📰 Google News Sitemap</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="footer-col-title">Portal</h4>
-          <ul class="footer-links">
-            <li><a href="/admin">⚙️ Admin CMS</a></li>
-            <li><a href="/admin/integrations">🔗 Integrations Hub</a></li>
-            <li><a href="/admin/editor">✍️ Multilingual News Editor</a></li>
-            <li><a href="/admin/ifttt">⚡ IFTTT Automation</a></li>
-          </ul>
+          <div class="footer-office-card">
+            <div class="footer-office-header">
+              <span class="footer-office-pulse-dot"></span>
+              <h4 class="footer-office-title">Registered Office</h4>
+            </div>
+            <div class="footer-office-body">
+              <p>📍 Chapar Town,</p>
+              <p>🏛️ Dhubri (Assam)</p>
+              <p>📮 PIN: 783371</p>
+              <p class="footer-office-email">
+                ✉️ <span>Email:</span> <a href="mailto:nd30team@gmail.com">nd30team@gmail.com</a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
