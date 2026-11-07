@@ -105,6 +105,12 @@ function getNotice() {
       if (!notice.message_as) notice.message_as = notice.message || '';
       if (!notice.message_hi) notice.message_hi = 'पूर्वोत्तर के निर्भीक और निष्पक्ष समाचार माध्यम ND30 LIVE में आपका स्वागत है! ताज़ा समाचारों के लिए जुड़े रहें।';
       if (!notice.message_en) notice.message_en = "Welcome to ND30 LIVE - Northeast India's Bold & Unbiased Digital News Portal. Stay tuned for live updates.";
+      if (!notice.badge_text_as) notice.badge_text_as = '📢 বিশেষ জাননী';
+      if (!notice.badge_text_hi) notice.badge_text_hi = '📢 विशेष सूचना';
+      if (!notice.badge_text_en) notice.badge_text_en = '📢 SPECIAL NOTICE';
+      if (!notice.badge_style) notice.badge_style = 'broadcast-pill';
+      if (!notice.badge_anim) notice.badge_anim = 'neon-blink';
+      if (!notice.badge_bg) notice.badge_bg = '#be123c';
     }
 
     return notice;
@@ -153,8 +159,14 @@ function saveNotice(data, file = null) {
     const message = (data.message || messageAs || messageEn || messageHi || '').trim();
     const linkUrl = (data.link_url || '').trim();
     const linkText = (data.link_text || 'পঢ়ক / Read More').trim();
-    const badgeText = (data.badge_text || '📢 জাননী / NOTICE').trim();
-    const badgeBg = data.badge_bg || '#dc2626';
+
+    const badgeTextAs = (data.badge_text_as || '📢 বিশেষ জাননী').trim();
+    const badgeTextHi = (data.badge_text_hi || '📢 विशेष सूचना').trim();
+    const badgeTextEn = (data.badge_text_en || '📢 SPECIAL NOTICE').trim();
+    const badgeText = (data.badge_text || badgeTextAs || '📢 বিশেষ জাননী').trim();
+    const badgeStyle = data.badge_style || 'broadcast-pill';
+    const badgeAnim = data.badge_anim || 'neon-blink';
+    const badgeBg = data.badge_bg || '#be123c';
     const badgeColor = data.badge_color || '#ffffff';
     
     // Valid animation types: marquee, pulse-glow, typewriter, bounce-float, shimmer-shine
@@ -182,6 +194,11 @@ function saveNotice(data, file = null) {
           link_url = ?,
           link_text = ?,
           badge_text = ?,
+          badge_text_as = ?,
+          badge_text_hi = ?,
+          badge_text_en = ?,
+          badge_style = ?,
+          badge_anim = ?,
           badge_bg = ?,
           badge_color = ?,
           animation_type = ?,
@@ -196,8 +213,8 @@ function saveNotice(data, file = null) {
         WHERE id = ?
       `).run(
         title, message, messageAs, messageHi, messageEn, linkUrl, linkText,
-        badgeText, badgeBg, badgeColor, animationType, bgTheme, customBg,
-        textColor, fontSize, fontWeight, isActive, showCloseButton, id
+        badgeText, badgeTextAs, badgeTextHi, badgeTextEn, badgeStyle, badgeAnim, badgeBg, badgeColor,
+        animationType, bgTheme, customBg, textColor, fontSize, fontWeight, isActive, showCloseButton, id
       );
       return getNoticeById(id);
     } else {
@@ -206,15 +223,15 @@ function saveNotice(data, file = null) {
         INSERT INTO frontend_notices (
           title, message, message_as, message_hi, message_en,
           image_url, link_url, link_text,
-          badge_text, badge_bg, badge_color, animation_type, bg_theme,
-          custom_bg, text_color, font_size, font_weight, is_active, show_close_button
+          badge_text, badge_text_as, badge_text_hi, badge_text_en, badge_style, badge_anim, badge_bg, badge_color,
+          animation_type, bg_theme, custom_bg, text_color, font_size, font_weight, is_active, show_close_button
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `).run(
         title, message, messageAs, messageHi, messageEn, imageUrl, linkUrl, linkText,
-        badgeText, badgeBg, badgeColor, animationType, bgTheme,
-        customBg, textColor, fontSize, fontWeight, isActive, showCloseButton
+        badgeText, badgeTextAs, badgeTextHi, badgeTextEn, badgeStyle, badgeAnim, badgeBg, badgeColor,
+        animationType, bgTheme, customBg, textColor, fontSize, fontWeight, isActive, showCloseButton
       );
       return getNoticeById(result.lastInsertRowid);
     }

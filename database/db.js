@@ -474,7 +474,12 @@ function initDatabase() {
       image_url TEXT DEFAULT '',
       link_url TEXT DEFAULT '',
       link_text TEXT DEFAULT 'পঢ়ক / Read More',
-      badge_text TEXT DEFAULT 'জাননী / NOTICE',
+      badge_text TEXT DEFAULT '📢 বিশেষ জাননী',
+      badge_text_as TEXT DEFAULT '📢 বিশেষ জাননী',
+      badge_text_hi TEXT DEFAULT '📢 विशेष सूचना',
+      badge_text_en TEXT DEFAULT '📢 SPECIAL NOTICE',
+      badge_style TEXT DEFAULT 'broadcast-pill',
+      badge_anim TEXT DEFAULT 'neon-blink',
       badge_bg TEXT DEFAULT '#dc2626',
       badge_color TEXT DEFAULT '#ffffff',
       animation_type TEXT DEFAULT 'marquee',
@@ -624,7 +629,7 @@ function initDatabase() {
     db.prepare("UPDATE frontend_notices SET image_url = '' WHERE image_url IS NOT NULL AND image_url != ''").run();
   } catch (e) {}
 
-  // Migrate multilingual notice message columns
+  // Migrate multilingual notice message and badge style columns
   try {
     const noticeCols = db.prepare('PRAGMA table_info(frontend_notices)').all().map(c => c.name);
     if (!noticeCols.includes('message_as')) {
@@ -636,19 +641,45 @@ function initDatabase() {
     if (!noticeCols.includes('message_en')) {
       db.prepare('ALTER TABLE frontend_notices ADD COLUMN message_en TEXT DEFAULT ""').run();
     }
+    if (!noticeCols.includes('badge_style')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN badge_style TEXT DEFAULT "broadcast-pill"').run();
+    }
+    if (!noticeCols.includes('badge_text_as')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN badge_text_as TEXT DEFAULT ""').run();
+    }
+    if (!noticeCols.includes('badge_text_hi')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN badge_text_hi TEXT DEFAULT ""').run();
+    }
+    if (!noticeCols.includes('badge_text_en')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN badge_text_en TEXT DEFAULT ""').run();
+    }
+    if (!noticeCols.includes('badge_anim')) {
+      db.prepare('ALTER TABLE frontend_notices ADD COLUMN badge_anim TEXT DEFAULT "neon-blink"').run();
+    }
 
     const currentNotice = db.prepare('SELECT * FROM frontend_notices LIMIT 1').get();
     if (currentNotice) {
       const msgAs = currentNotice.message_as || currentNotice.message || 'উত্তৰ-পূবৰ নিৰ্ভীক আৰু নিৰপেক্ষ সংবাদ মাধ্যম ND30 LIVE লৈ স্বাগতম! সকলো শেহতীয়া বাতৰিৰ বাবে আমাৰ সৈতে থাকক।';
       const msgHi = currentNotice.message_hi || 'पूर्वोत्तर के निर्भीक और निष्पक्ष समाचार माध्यम ND30 LIVE में आपका स्वागत है! ताज़ा समाचारों के लिए जुड़े रहें।';
       const msgEn = currentNotice.message_en || "Welcome to ND30 LIVE - Northeast India's Bold & Unbiased Digital News Portal. Stay tuned for live updates.";
+      const bTextAs = currentNotice.badge_text_as || '📢 বিশেষ জাননী';
+      const bTextHi = currentNotice.badge_text_hi || '📢 विशेष सूचना';
+      const bTextEn = currentNotice.badge_text_en || '📢 SPECIAL NOTICE';
+      const bStyle = currentNotice.badge_style || 'broadcast-pill';
+      const bAnim = currentNotice.badge_anim || 'neon-blink';
+
       db.prepare(`
         UPDATE frontend_notices 
         SET message_as = COALESCE(NULLIF(message_as, ''), ?),
             message_hi = COALESCE(NULLIF(message_hi, ''), ?),
-            message_en = COALESCE(NULLIF(message_en, ''), ?)
+            message_en = COALESCE(NULLIF(message_en, ''), ?),
+            badge_text_as = COALESCE(NULLIF(badge_text_as, ''), ?),
+            badge_text_hi = COALESCE(NULLIF(badge_text_hi, ''), ?),
+            badge_text_en = COALESCE(NULLIF(badge_text_en, ''), ?),
+            badge_style = COALESCE(NULLIF(badge_style, ''), ?),
+            badge_anim = COALESCE(NULLIF(badge_anim, ''), ?)
         WHERE id = ?
-      `).run(msgAs, msgHi, msgEn, currentNotice.id);
+      `).run(msgAs, msgHi, msgEn, bTextAs, bTextHi, bTextEn, bStyle, bAnim, currentNotice.id);
     }
   } catch (e) {
     console.error('[DB Notice Multilingual Migration Error]', e.message);
