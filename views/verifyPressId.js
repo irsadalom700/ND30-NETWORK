@@ -437,15 +437,15 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.fillText('PRESS ID CARD', W / 2, 22);
       ctx.restore();
 
-      // Official Uploaded ND30 LIVE Logo (Enlarged)
-      const logoImg = await loadImageHelper('/images/nd30_live_logo.png');
+      // Official Uploaded ND30 LIVE Logo (Tight crop, enlarged to fill marked box)
+      const logoImg = await loadImageHelper('/images/nd30_live_logo_tight.png?v=1') || await loadImageHelper('/images/nd30_live_logo.png');
       if (logoImg) {
-        ctx.drawImage(logoImg, (W - 410) / 2, 36, 410, 94);
+        ctx.drawImage(logoImg, (W - 350) / 2, 34, 350, 116);
       }
 
       // Slogan Ribbon (Decreased Compact Size)
       ctx.save();
-      const rX = 70, rY = 134, rW = W - 140, rH = 26;
+      const rX = 70, rY = 152, rW = W - 140, rH = 24;
       const ribbonGrad = ctx.createLinearGradient(rX, 0, rX + rW, 0);
       ribbonGrad.addColorStop(0, '#1e3a8a');
       ribbonGrad.addColorStop(0.5, '#2563eb');
@@ -461,7 +461,7 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.fillRect(rX + rW - 4, rY, 4, rH);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 13.5px "Segoe UI", Arial, sans-serif';
+      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', W / 2, rY + (rH / 2));

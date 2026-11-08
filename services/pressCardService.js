@@ -183,12 +183,13 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
         PRESS ID CARD
       </div>
 
-      <!-- Official Uploaded ND30 LIVE Logo (Enlarged) -->
-      <div style="display:flex; align-items:center; justify-content:center; height:clamp(64px, 16cqw, 88px); margin:1px auto 3px auto; max-width:96%;">
+      <!-- Official Uploaded ND30 LIVE Logo (Enlarged to match marked box) -->
+      <div style="display:flex; align-items:center; justify-content:center; height:clamp(68px, 17cqw, 94px); margin:3px auto 5px auto; width:100%;">
         <img 
-          src="${BASE_URL}/images/nd30_live_logo.png" 
+          src="${BASE_URL}/images/nd30_live_logo_tight.png?v=1" 
           alt="ND30 LIVE" 
-          style="max-height:100%; width:auto; max-width:96%; object-fit:contain; display:block; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.2));"
+          style="height:100%; width:auto; max-width:85%; object-fit:contain; display:block; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.22));"
+          onerror="this.onerror=null; this.src='${BASE_URL}/images/nd30_live_logo.png';"
         >
       </div>
 
@@ -1258,12 +1259,13 @@ function generatePressCardPng(app) {
       $fontTop.Dispose()
       $brushDarkSlate.Dispose()
 
-      # Official Uploaded ND30 LIVE Logo (Enlarged)
-      $lPath = '${logoPath.replace(/'/g, "''")}'
+      # Official Uploaded ND30 LIVE Logo (Tight Crop, Enlarged to Match Marked Area)
+      $tightLogoPath = '${path.join(__dirname, '..', 'public', 'images', 'nd30_live_logo_tight.png').replace(/'/g, "''")}'
+      $lPath = if ([System.IO.File]::Exists($tightLogoPath)) { $tightLogoPath } else { '${logoPath.replace(/'/g, "''")}' }
       if ([System.IO.File]::Exists($lPath)) {
         try {
           $logo = [System.Drawing.Bitmap]::FromFile($lPath)
-          $g.DrawImage($logo, [int](($W - 410) / 2), 36, 410, 94)
+          $g.DrawImage($logo, [int](($W - 350) / 2), 34, 350, 116)
           $logo.Dispose()
         } catch {}
       }
@@ -1271,8 +1273,8 @@ function generatePressCardPng(app) {
       # Blue Slogan Ribbon (Decreased Compact Size)
       $rW = $W - 140
       $rX = 70
-      $rH = 26
-      $rY = 134
+      $rH = 24
+      $rY = 152
       $blueGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
         (New-Object System.Drawing.Point($rX, $rY)),
         (New-Object System.Drawing.Point($rX + $rW, $rY)),
@@ -1283,7 +1285,7 @@ function generatePressCardPng(app) {
       $blueGrad.Dispose()
 
       $fontRibbon = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
-      $g.DrawString('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', $fontRibbon, $brushWhite, [float]($W / 2), $rY + 13, $sf)
+      $g.DrawString('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', $fontRibbon, $brushWhite, [float]($W / 2), $rY + 12, $sf)
       $fontRibbon.Dispose()
 
       # Left PRESS Ribbon
