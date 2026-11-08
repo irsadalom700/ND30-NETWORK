@@ -6,6 +6,7 @@
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 
@@ -54,7 +55,7 @@ const { renderLoginPage } = require('./views/login');
 const { renderPromoterDashboard } = require('./views/promoter/dashboard');
 const { renderVerifyPressIdPage } = require('./views/verifyPressId');
 const { uploadReporterDocs, saveReporterApplication, sendApplicationEmail } = require('./services/reporterService');
-const { approveReporterApplication, rejectReporterApplication, getReporterByPressId } = require('./services/pressCardService');
+const { approveReporterApplication, rejectReporterApplication, getReporterByPressId, generatePressCardPng } = require('./services/pressCardService');
 const {
   createUser,
   getUserById,
@@ -1006,6 +1007,28 @@ app.get('/verify-press-id/:pressIdCode', (req, res) => {
   const { pressIdCode } = req.params;
   const application = getReporterByPressId(pressIdCode);
   res.send(renderVerifyPressIdPage(application, pressIdCode));
+});
+
+// Download High-Resolution Official Press ID Card PNG
+app.get('/api/press-card/download/:pressIdCode', async (req, res) => {
+  const { pressIdCode } = req.params;
+  const application = getReporterByPressId(pressIdCode);
+  if (!application) {
+    return res.status(404).send('Press ID not found');
+  }
+  const displayCode = application.press_id_code 
+    ? (application.press_id_code.includes('-') ? `ND30${String(application.id).padStart(3, '0')}` : application.press_id_code)
+    : `ND30${String(application.id || 1).padStart(3, '0')}`;
+
+  try {
+    const pngPath = await generatePressCardPng(application);
+    if (pngPath && fs.existsSync(pngPath)) {
+      return res.download(pngPath, `ND30_ID_CARD_${displayCode}.png`);
+    }
+  } catch (e) {
+    console.error('[ID Card Download Error]', e);
+  }
+  res.redirect(`/verify-press-id/${pressIdCode}`);
 });
 
 // Reporter Application Status Update (Approve or Reject with Auto-Email & Press ID Card)

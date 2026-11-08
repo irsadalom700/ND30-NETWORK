@@ -49,12 +49,11 @@ function getEmailTransporter() {
 }
 
 /**
- * Generate a unique Press ID Code (e.g. ND30-REP-2026-0001)
+ * Generate a unique Press ID Code (matching official format e.g. ND30001)
  */
 function generatePressIdCode(applicationId) {
-  const year = new Date().getFullYear();
-  const paddedId = String(applicationId).padStart(4, '0');
-  return `ND30-REP-${year}-${paddedId}`;
+  const paddedId = String(applicationId).padStart(3, '0');
+  return `ND30${paddedId}`;
 }
 
 /**
@@ -66,27 +65,27 @@ async function generatePressIdQrCode(pressIdCode) {
   const filename = `qr_${pressIdCode.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
   const filePath = path.join(uploadDir, filename);
 
-  // Generate PNG file
+  // Generate PNG file with high contrast black/white for instant smartphone scanning
   await QRCode.toFile(filePath, verifyUrl, {
     errorCorrectionLevel: 'H',
     type: 'png',
-    margin: 2,
+    margin: 1,
     color: {
-      dark: '#0f172a',
+      dark: '#000000',
       light: '#ffffff'
     },
-    width: 280
+    width: 320
   });
 
   // Generate Data URL for direct inline embedding
   const dataUrl = await QRCode.toDataURL(verifyUrl, {
     errorCorrectionLevel: 'H',
-    margin: 2,
+    margin: 1,
     color: {
-      dark: '#0f172a',
+      dark: '#000000',
       light: '#ffffff'
     },
-    width: 280
+    width: 320
   });
 
   return {
@@ -98,121 +97,213 @@ async function generatePressIdQrCode(pressIdCode) {
 }
 
 /**
- * Render Press ID Card HTML Component
- * Used inside verification page, print view, and email template
+ * Render Official ND30 LIVE Press ID Card HTML Component
+ * Matches the official reference PVC vertical format with 3D logo, vertical PRESS ribbon,
+ * bordered photo frame, 5 stylized detail rows, live QR code, and authentic authorized signatory.
  */
 function renderPressCardHtml(app, qrDataUrl, verifyUrl) {
-  const issueDate = app.press_id_issued_at ? new Date(app.press_id_issued_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-IN');
-  const expiryDate = app.press_id_expires_at ? new Date(app.press_id_expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Valid for 1 Year';
-  const photoUrl = app.photo_file ? (app.photo_file.startsWith('http') ? app.photo_file : `${BASE_URL}${app.photo_file}`) : `${BASE_URL}/uploads/nd30_news_banner.jpg`;
-  const qrSrc = qrDataUrl || (app.press_id_qr ? `${BASE_URL}${app.press_id_qr}` : '');
+  if (!app) return '';
+
+  const displayCode = app.press_id_code 
+    ? (app.press_id_code.includes('-') ? `ND30${String(app.id).padStart(3, '0')}` : app.press_id_code)
+    : `ND30${String(app.id || 1).padStart(3, '0')}`;
+  
+  const designation = app.designation || app.join_as || 'Reporter';
+  const fullName = app.full_name || 'Reporter';
+  const mobileNo = app.mobile_no || 'N/A';
+  
+  let areaDisplay = 'Dhubri, Assam';
+  if (app.area) {
+    if (app.district && !app.area.toLowerCase().includes(app.district.toLowerCase())) {
+      areaDisplay = `${app.area}, ${app.district}`;
+    } else {
+      areaDisplay = `${app.area}, ${app.state || 'Assam'}`;
+    }
+  } else if (app.district) {
+    areaDisplay = `${app.district}, ${app.state || 'Assam'}`;
+  }
+
+  const photoUrl = app.photo_file 
+    ? (app.photo_file.startsWith('http') ? app.photo_file : `${BASE_URL}${app.photo_file}`) 
+    : `${BASE_URL}/images/default_reporter_avatar.png`;
+
+  const qrSrc = qrDataUrl || (app.press_id_qr ? (app.press_id_qr.startsWith('http') ? app.press_id_qr : `${BASE_URL}${app.press_id_qr}`) : '');
 
   return `
-  <div style="max-width:560px; margin:0 auto; background:linear-gradient(135deg, #090d16 0%, #111827 100%); border:2px solid #dc2626; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(220,38,38,0.3); font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color:#fff;">
-    <!-- Top Header -->
-    <div style="background:linear-gradient(135deg, #0b0f19 0%, #161c2b 100%); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #dc2626;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <img src="${BASE_URL}/images/nd30_live_logo.png" alt="ND30 LIVE" style="height:44px; max-width:140px; object-fit:contain;">
-        <div>
-          <div style="font-size:0.68rem; color:#facc15; letter-spacing:0.8px; text-transform:uppercase; font-weight:800;">
-            PRESS & FIELD ACCREDITATION
-          </div>
-          <div style="font-size:0.62rem; color:#94a3b8; letter-spacing:0.5px;">
-            OFFICIAL DIGITAL NEWS NETWORK
-          </div>
-        </div>
-      </div>
-      <div style="text-align:right;">
-        <span style="background:#dc2626; color:#fff; font-size:0.75rem; font-weight:900; padding:4px 10px; border-radius:4px; letter-spacing:0.5px; text-transform:uppercase;">
-          PRESS ID
-        </span>
-        <div style="font-size:0.68rem; color:#38bdf8; margin-top:3px; font-weight:700;">
-          REPORTER CARD
-        </div>
-      </div>
-    </div>
+  <div class="nd30-id-card-wrapper" style="width:100%; max-width:440px; margin:0 auto; perspective:1000px;">
+    <div class="nd30-id-card-container" style="
+      container-type: inline-size;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 663 / 1024;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(220, 38, 38, 0.35);
+      background: #ffffff;
+      user-select: none;
+    ">
+      <!-- High-Resolution Card Template -->
+      <img 
+        src="${BASE_URL}/images/nd30_id_card_template.png" 
+        alt="ND30 Official Press ID Card Template" 
+        style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; display:block; z-index:1;"
+        loading="eager"
+      >
 
-    <!-- Card Main Grid -->
-    <div style="padding:20px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
-      <!-- Photo & Designation Column -->
-      <div style="display:flex; flex-direction:column; align-items:center; width:130px; flex-shrink:0;">
-        <div style="width:120px; height:140px; border-radius:10px; overflow:hidden; border:2px solid #facc15; box-shadow:0 4px 12px rgba(0,0,0,0.5); background:#1e293b;">
-          <img src="${photoUrl}" alt="${escapeHtml(app.full_name)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${BASE_URL}/uploads/nd30_news_banner.jpg'">
-        </div>
-        <div style="background:#dc2626; color:#fff; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:14px; margin-top:10px; text-transform:uppercase; letter-spacing:0.8px; box-shadow:0 2px 6px rgba(220,38,38,0.4); text-align:center; width:100%;">
-          🎙️ ${escapeHtml(app.designation || app.join_as || 'REPORTER')}
-        </div>
-        <div style="font-size:0.65rem; color:#94a3b8; margin-top:4px; text-align:center;">
-          STATE: ASSAM
-        </div>
-      </div>
-
-      <!-- Details Column -->
-      <div style="flex:1; min-width:240px;">
-        <div style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
-          <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px;">PRESS ID NUMBER</div>
-          <div style="font-size:1.1rem; font-weight:800; color:#38bdf8; font-family:monospace; letter-spacing:1px;">
-            ${escapeHtml(app.press_id_code)}
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr; gap:6px; font-size:0.82rem;">
-          <div>
-            <span style="color:#94a3b8; font-size:0.72rem; display:block;">ACCREDITED NAME</span>
-            <strong style="color:#ffffff; font-size:0.95rem;">${escapeHtml(app.full_name)}</strong>
-          </div>
-          <div>
-            <span style="color:#94a3b8; font-size:0.72rem; display:block;">FATHER'S NAME</span>
-            <span style="color:#e2e8f0;">${escapeHtml(app.father_name)}</span>
-          </div>
-          <div>
-            <span style="color:#94a3b8; font-size:0.72rem; display:block;">REPORTING AREA & DISTRICT</span>
-            <strong style="color:#facc15;">${escapeHtml(app.area ? `${app.area} (${app.district})` : `${app.district}, ${app.state}`)}</strong>
-          </div>
-          <div>
-            <span style="color:#94a3b8; font-size:0.72rem; display:block;">MOBILE NUMBER</span>
-            <span style="color:#22c55e; font-weight:700;">📞 ${escapeHtml(app.mobile_no)}</span>
-          </div>
-          <div>
-            <span style="color:#94a3b8; font-size:0.72rem; display:block;">RESIDENTIAL ADDRESS</span>
-            <span style="color:#cbd5e1; font-size:0.75rem; line-height:1.3;">
-              ${escapeHtml(app.village_town)}, PO: ${escapeHtml(app.post_office)}, PS: ${escapeHtml(app.police_station)}, PIN: ${escapeHtml(app.pin_code)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Security QR Code & Signatures Bar -->
-    <div style="background:#0b0f19; border-top:1px solid rgba(255,255,255,0.08); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-      <!-- QR Code with Label -->
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="background:#fff; padding:4px; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.4); flex-shrink:0;">
-          <img src="${qrSrc}" alt="Secured QR Code" style="width:68px; height:68px; display:block;">
-        </div>
-        <div>
-          <div style="font-size:0.72rem; font-weight:700; color:#22c55e;">
-            🔒 SECURED QR CODE
-          </div>
-          <div style="font-size:0.65rem; color:#94a3b8; line-height:1.3; max-width:180px;">
-            Scan with smartphone camera to view live verification details online.
-          </div>
-        </div>
+      <!-- Dynamic Reporter Photo -->
+      <div class="nd30-id-photo-box" style="
+        position: absolute;
+        top: 24.02%;
+        left: 30.47%;
+        width: 44.34%;
+        height: 31.05%;
+        z-index: 2;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 3.5px solid #dc2626;
+        background: #2ca9ed;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+      ">
+        <img 
+          src="${photoUrl}" 
+          alt="${escapeHtml(fullName)}" 
+          style="width:100%; height:100%; object-fit:cover; display:block;"
+          onerror="this.onerror=null; this.src='${BASE_URL}/images/default_reporter_avatar.png';"
+        >
       </div>
 
-      <!-- Validity & Seal -->
-      <div style="text-align:right; font-size:0.72rem;">
-        <div style="color:#94a3b8;">ISSUED: <strong style="color:#fff;">${issueDate}</strong></div>
-        <div style="color:#94a3b8; margin-top:2px;">EXPIRES: <strong style="color:#facc15;">${expiryDate}</strong></div>
-        <div style="margin-top:6px; color:#38bdf8; font-weight:800; font-size:0.68rem; letter-spacing:0.5px;">
-          ✓ AUTHORIZED SIGNATORY
-        </div>
+      <!-- 5 Dynamic Details Fields -->
+      <!-- Row 1: NAME -->
+      <div class="nd30-card-val nd30-card-val-name" style="
+        position: absolute;
+        top: 56.1%;
+        left: 53.2%;
+        width: 38%;
+        height: 4.1%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Arial, -apple-system, sans-serif;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: clamp(0.72rem, 3.8cqw, 1.05rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.2px;
+      " title="${escapeHtml(fullName)}">
+        ${escapeHtml(fullName)}
       </div>
-    </div>
 
-    <!-- Authority Note -->
-    <div style="background:#030712; padding:8px 20px; font-size:0.62rem; color:#64748b; text-align:center; border-top:1px solid rgba(255,255,255,0.04); line-height:1.4;">
-      This Press Card is the property of ND30 LIVE Network. Police and administration are requested to assist the accredited bearer in journalistic duties.
+      <!-- Row 2: DESIGNATION -->
+      <div class="nd30-card-val nd30-card-val-desig" style="
+        position: absolute;
+        top: 60.6%;
+        left: 53.2%;
+        width: 38%;
+        height: 4.1%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Arial, -apple-system, sans-serif;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: clamp(0.72rem, 3.8cqw, 1.05rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.2px;
+      " title="${escapeHtml(designation)}">
+        ${escapeHtml(designation)}
+      </div>
+
+      <!-- Row 3: CODE -->
+      <div class="nd30-card-val nd30-card-val-code" style="
+        position: absolute;
+        top: 65.1%;
+        left: 53.2%;
+        width: 38%;
+        height: 4.1%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', monospace;
+        font-weight: 900;
+        color: #0f172a;
+        font-size: clamp(0.75rem, 4.0cqw, 1.1rem);
+        white-space: nowrap;
+        overflow: hidden;
+        letter-spacing: 0.8px;
+      " title="${escapeHtml(displayCode)}">
+        ${escapeHtml(displayCode)}
+      </div>
+
+      <!-- Row 4: AREA -->
+      <div class="nd30-card-val nd30-card-val-area" style="
+        position: absolute;
+        top: 69.6%;
+        left: 53.2%;
+        width: 38%;
+        height: 4.1%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Arial, -apple-system, sans-serif;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: clamp(0.68rem, 3.4cqw, 0.95rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.2px;
+      " title="${escapeHtml(areaDisplay)}">
+        ${escapeHtml(areaDisplay)}
+      </div>
+
+      <!-- Row 5: MOB.NO -->
+      <div class="nd30-card-val nd30-card-val-mob" style="
+        position: absolute;
+        top: 74.1%;
+        left: 53.2%;
+        width: 38%;
+        height: 4.1%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Arial, -apple-system, sans-serif;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: clamp(0.72rem, 3.8cqw, 1.05rem);
+        white-space: nowrap;
+        overflow: hidden;
+        letter-spacing: 0.6px;
+      " title="${escapeHtml(mobileNo)}">
+        ${escapeHtml(mobileNo)}
+      </div>
+
+      <!-- Secured Verification QR Code -->
+      <div class="nd30-id-qr-box" style="
+        position: absolute;
+        top: 83.2%;
+        left: 6.03%;
+        width: 17.2%;
+        height: 11.13%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border-radius: 4px;
+        padding: 2px;
+        box-sizing: border-box;
+      ">
+        ${qrSrc ? `
+          <img src="${qrSrc}" alt="Secured Verification QR Code" style="width:100%; height:100%; object-fit:contain; display:block;">
+        ` : `
+          <div style="font-size:0.6rem; color:#94a3b8; text-align:center; font-weight:700;">QR VERIFY</div>
+        `}
+      </div>
     </div>
   </div>
   `;
@@ -414,10 +505,182 @@ async function rejectReporterApplication(applicationId, reason = '') {
 }
 
 /**
- * Get Application by Press ID code
+ * Get Application by Press ID code (Supports ND30001, ND30-REP-2026-0001, and ID lookup)
  */
 function getReporterByPressId(pressIdCode) {
-  return db.prepare('SELECT * FROM reporter_applications WHERE press_id_code = ?').get(pressIdCode);
+  if (!pressIdCode) return null;
+  const clean = String(pressIdCode).trim();
+
+  // 1. Exact match in database
+  let app = db.prepare('SELECT * FROM reporter_applications WHERE press_id_code = ?').get(clean);
+  if (app) return app;
+
+  // 2. Case-insensitive match
+  app = db.prepare('SELECT * FROM reporter_applications WHERE LOWER(press_id_code) = LOWER(?)').get(clean);
+  if (app) return app;
+
+  // 3. Short code like ND30001 or ND30003 -> lookup by numeric application id
+  const m = clean.match(/^ND300*(\d+)$/i);
+  if (m) {
+    const id = parseInt(m[1], 10);
+    app = db.prepare('SELECT * FROM reporter_applications WHERE id = ?').get(id);
+    if (app) return app;
+  }
+
+  // 4. Substring / legacy format match
+  return db.prepare('SELECT * FROM reporter_applications WHERE press_id_code LIKE ?').get(`%${clean}%`);
+}
+
+const { execFile } = require('child_process');
+
+/**
+ * Generate High-Resolution 663x1024 Official Press ID Card PNG file
+ */
+function generatePressCardPng(app) {
+  return new Promise((resolve) => {
+    if (!app) return resolve(null);
+    const displayCode = app.press_id_code 
+      ? (app.press_id_code.includes('-') ? `ND30${String(app.id).padStart(3, '0')}` : app.press_id_code)
+      : `ND30${String(app.id || 1).padStart(3, '0')}`;
+    const filename = `idcard_${displayCode.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+    const outputPath = path.join(uploadDir, filename);
+
+    // If cached image already exists, return immediately
+    if (fs.existsSync(outputPath)) {
+      return resolve(outputPath);
+    }
+
+    if (process.platform !== 'win32') {
+      return resolve(null);
+    }
+
+    const designation = app.designation || app.join_as || 'Reporter';
+    const fullName = app.full_name || 'Reporter';
+    const mobileNo = app.mobile_no || 'N/A';
+    let areaDisplay = 'Dhubri, Assam';
+    if (app.area) {
+      if (app.district && !app.area.toLowerCase().includes(app.district.toLowerCase())) {
+        areaDisplay = `${app.area}, ${app.district}`;
+      } else {
+        areaDisplay = `${app.area}, ${app.state || 'Assam'}`;
+      }
+    } else if (app.district) {
+      areaDisplay = `${app.district}, ${app.state || 'Assam'}`;
+    }
+
+    const templatePath = path.join(__dirname, '..', 'public', 'images', 'nd30_id_card_template.png');
+    const avatarPath = path.join(__dirname, '..', 'public', 'images', 'default_reporter_avatar.png');
+    let photoPath = '';
+    if (app.photo_file && !app.photo_file.startsWith('http')) {
+      photoPath = path.join(__dirname, '..', 'public', app.photo_file);
+    }
+    let qrPath = '';
+    if (app.press_id_qr && !app.press_id_qr.startsWith('http')) {
+      qrPath = path.join(__dirname, '..', 'public', app.press_id_qr);
+    }
+
+    const psScript = `
+      [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null
+      $template = [System.Drawing.Bitmap]::FromFile('${templatePath.replace(/'/g, "''")}')
+      $bmp = New-Object System.Drawing.Bitmap($template.Width, $template.Height)
+      $g = [System.Drawing.Graphics]::FromImage($bmp)
+      $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+      $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+      $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+      $g.DrawImage($template, 0, 0, $template.Width, $template.Height)
+      $template.Dispose()
+
+      $photoRect = New-Object System.Drawing.Rectangle(204, 248, 288, 312)
+      $radius = 14
+      $diameter = $radius * 2
+      $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+      $arc = New-Object System.Drawing.Rectangle($photoRect.X, $photoRect.Y, $diameter, $diameter)
+      $path.AddArc($arc, 180, 90)
+      $arc.X = $photoRect.Right - $diameter
+      $path.AddArc($arc, 270, 90)
+      $arc.Y = $photoRect.Bottom - $diameter
+      $path.AddArc($arc, 0, 90)
+      $arc.X = $photoRect.Left
+      $path.AddArc($arc, 90, 90)
+      $path.CloseFigure()
+
+      $hasPhoto = $false
+      $pPath = '${photoPath.replace(/'/g, "''")}'
+      if ($pPath -and [System.IO.File]::Exists($pPath)) {
+        try {
+          $photo = [System.Drawing.Bitmap]::FromFile($pPath)
+          $g.SetClip($path)
+          $srcRatio = $photo.Width / $photo.Height
+          $dstRatio = $photoRect.Width / $photoRect.Height
+          $srcCrop = New-Object System.Drawing.Rectangle(0, 0, $photo.Width, $photo.Height)
+          if ($srcRatio -gt $dstRatio) {
+            $cropW = [int]($photo.Height * $dstRatio)
+            $srcCrop.X = [int](($photo.Width - $cropW) / 2)
+            $srcCrop.Width = $cropW
+          } else {
+            $cropH = [int]($photo.Width / $dstRatio)
+            $srcCrop.Y = [int](($photo.Height - $cropH) / 2)
+            $srcCrop.Height = $cropH
+          }
+          $g.DrawImage($photo, $photoRect, $srcCrop, [System.Drawing.GraphicsUnit]::Pixel)
+          $g.ResetClip()
+          $photo.Dispose()
+          $hasPhoto = $true
+        } catch {}
+      }
+
+      if (-not $hasPhoto) {
+        $avPath = '${avatarPath.replace(/'/g, "''")}'
+        if ([System.IO.File]::Exists($avPath)) {
+          $avatar = [System.Drawing.Bitmap]::FromFile($avPath)
+          $g.SetClip($path)
+          $g.DrawImage($avatar, $photoRect)
+          $g.ResetClip()
+          $avatar.Dispose()
+        }
+      }
+
+      $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(220, 38, 38), 4)
+      $g.DrawPath($pen, $path)
+      $pen.Dispose()
+      $path.Dispose()
+
+      $font = New-Object System.Drawing.Font('Segoe UI', 18, [System.Drawing.FontStyle]::Bold)
+      $fontMono = New-Object System.Drawing.Font('Consolas', 19, [System.Drawing.FontStyle]::Bold)
+      $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(15, 23, 42))
+
+      $g.DrawString('${fullName.replace(/'/g, "''")}', $font, $brush, 354, 579)
+      $g.DrawString('${designation.replace(/'/g, "''")}', $font, $brush, 354, 625)
+      $g.DrawString('${displayCode.replace(/'/g, "''")}', $fontMono, $brush, 354, 671)
+      $g.DrawString('${areaDisplay.replace(/'/g, "''")}', $font, $brush, 354, 717)
+      $g.DrawString('${mobileNo.replace(/'/g, "''")}', $font, $brush, 354, 763)
+
+      $font.Dispose()
+      $fontMono.Dispose()
+      $brush.Dispose()
+
+      $qPath = '${qrPath.replace(/'/g, "''")}'
+      if ($qPath -and [System.IO.File]::Exists($qPath)) {
+        try {
+          $qr = [System.Drawing.Bitmap]::FromFile($qPath)
+          $g.DrawImage($qr, 38, 852, 116, 116)
+          $qr.Dispose()
+        } catch {}
+      }
+
+      $g.Dispose()
+      $bmp.Save('${outputPath.replace(/'/g, "''")}', [System.Drawing.Imaging.ImageFormat]::Png)
+      $bmp.Dispose()
+    `;
+
+    execFile('powershell', ['-NoProfile', '-Command', psScript], (err) => {
+      if (err) {
+        console.error('[GeneratePressCardPng Error]', err.message);
+        return resolve(null);
+      }
+      resolve(outputPath);
+    });
+  });
 }
 
 function escapeHtml(str) {
@@ -434,6 +697,7 @@ module.exports = {
   generatePressIdCode,
   generatePressIdQrCode,
   renderPressCardHtml,
+  generatePressCardPng,
   approveReporterApplication,
   rejectReporterApplication,
   getReporterByPressId

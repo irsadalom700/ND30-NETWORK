@@ -283,8 +283,11 @@ function renderReporterApplicationsAdmin() {
                         ✓ Approve & Issue ID
                       </button>
                     ` : `
-                      <a href="/verify-press-id/${app.press_id_code}" target="_blank" class="btn btn-secondary btn-sm" title="View Digital Press Card">
+                      <a href="/verify-press-id/${app.press_id_code}" target="_blank" class="btn btn-secondary btn-sm" title="View Official PVC Press ID Card">
                         🪪 View ID
+                      </a>
+                      <a href="/api/press-card/download/${app.press_id_code}" target="_blank" class="btn btn-primary btn-sm" title="Download High-Resolution ID Card (PNG)">
+                        📥 Download HD
                       </a>
                     `}
                     ${!isRejected ? `
