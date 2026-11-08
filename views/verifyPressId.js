@@ -389,15 +389,21 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      // Subtle Watermark lines
+      // Repeating "ND30" Watermark Pattern
       ctx.save();
-      ctx.strokeStyle = 'rgba(0,0,0,0.035)';
-      ctx.lineWidth = 1;
-      for (let y = -H; y < H * 2; y += 22) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y + W * 0.7);
-        ctx.stroke();
+      ctx.font = '900 13px "Arial Black", Impact, sans-serif';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.042)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let y = -40; y < H + 80; y += 46) {
+        const xOffset = (Math.floor((y + 40) / 46) % 2 === 0) ? 0 : 40;
+        for (let x = -40; x < W + 80; x += 80) {
+          ctx.save();
+          ctx.translate(x + xOffset, y);
+          ctx.rotate(-22 * Math.PI / 180);
+          ctx.fillText('ND30', 0, 0);
+          ctx.restore();
+        }
       }
       ctx.restore();
 
@@ -422,32 +428,20 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.fill();
       ctx.restore();
 
-      // ND30 LIVE Header Logo
+      // Top Title: PRESS ID CARD
       ctx.save();
-      ctx.font = '900 64px "Arial Black", Impact, sans-serif';
-      ctx.fillStyle = '#dc2626';
+      ctx.font = '900 17px "Arial Black", Impact, sans-serif';
+      ctx.fillStyle = '#b91c1c';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-      ctx.fillText('ND30', 270, 72);
-
-      // LIVE pill
-      const pillX = 360, pillY = 46, pillW = 125, pillH = 50, pillR = 25;
-      ctx.fillStyle = '#dc2626';
-      ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 28px "Arial Black", Impact, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('LIVE', pillX + (pillW / 2) + 6, pillY + (pillH / 2) + 1);
-
-      // Dot inside LIVE
-      ctx.beginPath();
-      ctx.arc(pillX + 22, pillY + (pillH / 2), 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
+      ctx.fillText('PRESS ID CARD', W / 2, 28);
       ctx.restore();
+
+      // Official Uploaded ND30 LIVE Logo
+      const logoImg = await loadImageHelper('/images/nd30_live_logo.png');
+      if (logoImg) {
+        ctx.drawImage(logoImg, (W - 310) / 2, 44, 310, 68);
+      }
 
       // Slogan Ribbon
       ctx.save();
@@ -669,15 +663,21 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      // Watermark lines
+      // Repeating "ND30" Watermark Pattern
       ctx.save();
-      ctx.strokeStyle = 'rgba(0,0,0,0.035)';
-      ctx.lineWidth = 1;
-      for (let y = -H; y < H * 2; y += 22) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y + W * 0.7);
-        ctx.stroke();
+      ctx.font = '900 13px "Arial Black", Impact, sans-serif';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.038)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let y = -40; y < H + 80; y += 46) {
+        const xOffset = (Math.floor((y + 40) / 46) % 2 === 0) ? 0 : 40;
+        for (let x = -40; x < W + 80; x += 80) {
+          ctx.save();
+          ctx.translate(x + xOffset, y);
+          ctx.rotate(-22 * Math.PI / 180);
+          ctx.fillText('ND30', 0, 0);
+          ctx.restore();
+        }
       }
       ctx.restore();
 

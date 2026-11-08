@@ -146,44 +146,14 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
     user-select: none;
     box-sizing: border-box;
   ">
-    <!-- Security Watermark Background Pattern -->
+    <!-- Seamless "ND30" Repeating Watermark Background -->
     <div style="
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      opacity: 0.045;
-      background-image: repeating-linear-gradient(
-        -35deg,
-        #000000 0,
-        #000000 1px,
-        transparent 1px,
-        transparent 28px
-      );
+      background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='46' viewBox='0 0 80 46'%3E%3Ctext x='40' y='28' font-family='Arial Black, Impact, sans-serif' font-weight='900' font-size='13' fill='%23000000' fill-opacity='0.042' text-anchor='middle' transform='rotate(-22 40 28)'%3END30%3C/text%3E%3C/svg%3E&quot;);
       pointer-events: none;
       z-index: 1;
     "></div>
-
-    <!-- Top Watermark Text Grid -->
-    <div style="
-      position: absolute;
-      top: 15px; left: 10px; right: 10px; height: 180px;
-      opacity: 0.055;
-      font-size: 13px;
-      font-weight: 900;
-      color: #0f172a;
-      line-height: 1.8;
-      letter-spacing: 4px;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 1;
-      transform: rotate(-12deg);
-      white-space: nowrap;
-    ">
-      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
-      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
-      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
-      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
-      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30
-    </div>
 
     <!-- Top Header Corner Curve Swoosh -->
     <svg style="position:absolute; top:0; right:0; width:100%; height:110px; z-index:1; pointer-events:none;" viewBox="0 0 663 170" fill="none" preserveAspectRatio="none">
@@ -198,40 +168,28 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
     </svg>
 
     <!-- HEADER BLOCK -->
-    <div style="position:relative; z-index:2; padding:14px 16px 4px 16px; text-align:center;">
-      <!-- ND30 LIVE Official 3D Logo Header -->
-      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:2px;">
-        <span style="
-          font-family:'Arial Black', Impact, sans-serif;
-          font-size:clamp(1.9rem, 10.5cqw, 2.9rem);
-          font-weight:900;
-          color:#dc2626;
-          letter-spacing:1px;
-          line-height:1;
-          text-shadow:
-            -1.5px -1.5px 0 #ffffff,
-             1.5px -1.5px 0 #ffffff,
-            -1.5px  1.5px 0 #ffffff,
-             1.5px  1.5px 0 #ffffff,
-             0 3px 6px rgba(0,0,0,0.3);
-        ">ND30</span>
-        <span style="
-          background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
-          color:#ffffff;
-          font-family:'Arial Black', Impact, sans-serif;
-          font-size:clamp(0.95rem, 5.2cqw, 1.45rem);
-          font-weight:900;
-          letter-spacing:3px;
-          padding:3px 16px;
-          border-radius:999px;
-          box-shadow:inset 0 1px 2px rgba(255,255,255,0.7), 0 3px 8px rgba(185, 28, 28, 0.45);
-          display:inline-flex;
-          align-items:center;
-          gap:6px;
-        ">
-          <span style="width:7px; height:7px; background:#fff; border-radius:50%; display:inline-block; box-shadow:0 0 6px #fff;"></span>
-          LIVE
-        </span>
+    <div style="position:relative; z-index:2; padding:10px 16px 4px 16px; text-align:center;">
+      <!-- Top Title: PRESS ID CARD -->
+      <div style="
+        font-family:'Arial Black', Impact, -apple-system, sans-serif;
+        font-size:clamp(0.72rem, 3.6cqw, 0.95rem);
+        font-weight:900;
+        color:#b91c1c;
+        letter-spacing:4px;
+        text-transform:uppercase;
+        margin-bottom:2px;
+        text-shadow:0 1px 2px rgba(255, 255, 255, 0.9);
+      ">
+        PRESS ID CARD
+      </div>
+
+      <!-- Official Uploaded ND30 LIVE Logo -->
+      <div style="display:flex; align-items:center; justify-content:center; height:clamp(46px, 11cqw, 62px); margin:2px auto 4px auto;">
+        <img 
+          src="${BASE_URL}/images/nd30_live_logo.png" 
+          alt="ND30 LIVE" 
+          style="max-height:100%; max-width:85%; object-fit:contain; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.18));"
+        >
       </div>
 
       <!-- Assamese Official Slogan Ribbon -->
@@ -656,18 +614,11 @@ function renderPressCardBackHtml(app, qrDataUrl, verifyUrl) {
     user-select: none;
     box-sizing: border-box;
   ">
-    <!-- Security Watermark Background Pattern -->
+    <!-- Seamless "ND30" Repeating Watermark Background -->
     <div style="
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      opacity: 0.04;
-      background-image: repeating-linear-gradient(
-        -35deg,
-        #000000 0,
-        #000000 1px,
-        transparent 1px,
-        transparent 28px
-      );
+      background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='46' viewBox='0 0 80 46'%3E%3Ctext x='40' y='28' font-family='Arial Black, Impact, sans-serif' font-weight='900' font-size='13' fill='%23000000' fill-opacity='0.038' text-anchor='middle' transform='rotate(-22 40 28)'%3END30%3C/text%3E%3C/svg%3E&quot;);
       pointer-events: none;
       z-index: 1;
     "></div>
@@ -1235,6 +1186,7 @@ function generatePressCardPng(app) {
       areaDisplay = `${app.district}, ${app.state || 'Assam'}`;
     }
 
+    const logoPath = path.join(__dirname, '..', 'public', 'images', 'nd30_live_logo.png');
     const avatarPath = path.join(__dirname, '..', 'public', 'images', 'default_reporter_avatar.png');
     let photoPath = '';
     if (app.photo_file && !app.photo_file.startsWith('http')) {
@@ -1261,6 +1213,22 @@ function generatePressCardPng(app) {
       $g.FillRectangle($whiteBrush, 0, 0, $W, $H)
       $whiteBrush.Dispose()
 
+      # Repeating "ND30" Watermark Pattern
+      $fontWm = New-Object System.Drawing.Font('Arial Black', 11, [System.Drawing.FontStyle]::Bold)
+      $brushWm = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(12, 0, 0, 0))
+      for ($wy = -50; $wy -lt $H + 100; $wy += 50) {
+        $xOff = if ([int](($wy + 50) / 50) % 2 -eq 0) { 0 } else { 45 }
+        for ($wx = -50; $wx -lt $W + 100; $wx += 90) {
+          $state = $g.Save()
+          $g.TranslateTransform($wx + $xOff, $wy)
+          $g.RotateTransform(-20)
+          $g.DrawString('ND30', $fontWm, $brushWm, 0, 0)
+          $g.Restore($state)
+        }
+      }
+      $fontWm.Dispose()
+      $brushWm.Dispose()
+
       # Top Wave
       $redGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
         (New-Object System.Drawing.Point(0, 0)),
@@ -1278,21 +1246,27 @@ function generatePressCardPng(app) {
       $topPath.Dispose()
       $redGrad.Dispose()
 
-      # Logo Text: ND30 LIVE
-      $fontLogo = New-Object System.Drawing.Font('Arial Black', 38, [System.Drawing.FontStyle]::Bold)
-      $brushRed = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220, 38, 38))
-      $g.DrawString('ND30', $fontLogo, $brushRed, 180, 35)
-      $fontLogo.Dispose()
-      $brushRed.Dispose()
+      # String format center
+      $sf = New-Object System.Drawing.StringFormat
+      $sf.Alignment = [System.Drawing.StringAlignment]::Center
+      $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
 
-      $pillBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220, 38, 38))
-      $g.FillEllipse($pillBrush, 360, 48, 120, 46)
-      $pillBrush.Dispose()
+      # Top Title: PRESS ID CARD
+      $fontTop = New-Object System.Drawing.Font('Arial Black', 13, [System.Drawing.FontStyle]::Bold)
+      $brushCrimson = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(185, 28, 28))
+      $g.DrawString('PRESS ID CARD', $fontTop, $brushCrimson, [float]($W / 2), 24, $sf)
+      $fontTop.Dispose()
+      $brushCrimson.Dispose()
 
-      $fontLive = New-Object System.Drawing.Font('Arial Black', 18, [System.Drawing.FontStyle]::Bold)
-      $brushWhite = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-      $g.DrawString('LIVE', $fontLive, $brushWhite, 390, 56)
-      $fontLive.Dispose()
+      # Official Uploaded ND30 LIVE Logo
+      $lPath = '${logoPath.replace(/'/g, "''")}'
+      if ([System.IO.File]::Exists($lPath)) {
+        try {
+          $logo = [System.Drawing.Bitmap]::FromFile($lPath)
+          $g.DrawImage($logo, [int](($W - 320) / 2), 42, 320, 72)
+          $logo.Dispose()
+        } catch {}
+      }
 
       # Blue Slogan Ribbon
       $blueGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
