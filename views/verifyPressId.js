@@ -1,16 +1,11 @@
 /**
  * ND30 LIVE - Public Press ID Verification Page
- * Features Dual-Sided Official PVC Press ID Card (Front & Back),
- * Interactive 3D Flip Viewer, Side-by-Side View, Instant HD PNG Downloads (Front, Back, Both Sides),
- * and standard dual-sided badge print layout.
+ * Displayed when anyone scans the QR code on a reporter's Press Card
+ * or visits /verify-press-id/:pressIdCode
  */
 
 const { renderLayout } = require('./layout');
-const { 
-  renderPressCardHtml, 
-  renderPressCardFrontHtml, 
-  renderPressCardBackHtml 
-} = require('../services/pressCardService');
+const { renderPressCardFrontHtml, renderPressCardBackHtml, renderPressCardHtml } = require('../services/pressCardService');
 
 function renderVerifyPressIdPage(app, pressIdCode) {
   const isValid = !!app && app.status === 'approved';
@@ -42,22 +37,13 @@ function renderVerifyPressIdPage(app, pressIdCode) {
     });
   }
 
-  // Valid Credential Data
-  const issueDateFormatted = app.press_id_issued_at 
-    ? new Date(app.press_id_issued_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) 
-    : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
-
-  const expiryDateFormatted = app.press_id_expires_at 
-    ? new Date(app.press_id_expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) 
-    : '1 Year from Issue';
+  // Valid Credential
+  const issueDateFormatted = app.press_id_issued_at ? new Date(app.press_id_issued_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Active';
+  const expiryDateFormatted = app.press_id_expires_at ? new Date(app.press_id_expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '1 Year from Issue';
 
   const displayCode = app.press_id_code 
     ? (app.press_id_code.includes('-') ? `ND30${String(app.id).padStart(3, '0')}` : app.press_id_code)
     : `ND30${String(app.id || 1).padStart(3, '0')}`;
-
-  const designation = app.designation || app.join_as || 'Reporter';
-  const fullName = app.full_name || 'Reporter';
-  const mobileNo = app.mobile_no || 'N/A';
 
   let areaDisplay = 'Dhubri, Assam';
   if (app.area) {
@@ -78,123 +64,87 @@ function renderVerifyPressIdPage(app, pressIdCode) {
     ? (app.press_id_qr.startsWith('http') ? app.press_id_qr : app.press_id_qr)
     : '';
 
-  const frontCardHtml = renderPressCardFrontHtml(app);
-  const backCardHtml = renderPressCardBackHtml(app, '', '');
+  const frontHtml = renderPressCardFrontHtml(app);
+  const backHtml = renderPressCardBackHtml(app);
 
   const content = `
   <style>
-    /* Print Styles: Isolates Both Sides for Direct PVC Card Printing */
     @media print {
       body * {
         visibility: hidden !important;
       }
-      .nd30-print-dualsided-area, .nd30-print-dualsided-area * {
+      .nd30-printable-card-area, .nd30-printable-card-area * {
         visibility: visible !important;
       }
-      .nd30-print-dualsided-area {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: center !important;
-        gap: 15mm !important;
+      .nd30-printable-card-area {
         position: fixed !important;
         left: 50% !important;
         top: 50% !important;
         transform: translate(-50%, -50%) !important;
-        width: 170mm !important;
+        width: 100% !important;
+        max-width: 820px !important;
         margin: 0 !important;
         padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
         background: transparent !important;
       }
-      .nd30-print-card-col {
-        width: 74mm !important;
-        max-width: 74mm !important;
-        box-shadow: none !important;
-        border: 1px solid #ccc !important;
-      }
-      .no-print, header, footer, nav, .site-header, .site-footer, .nd30-interactive-view {
+      .no-print, header, footer, nav, .site-header, .site-footer {
         display: none !important;
       }
-    }
-
-    /* Interactive 3D Card Stage */
-    .nd30-card-stage-container {
-      perspective: 1200px;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .nd30-flip-inner {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 663 / 1024;
-      transition: transform 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      transform-style: preserve-3d;
-      cursor: pointer;
-    }
-    .nd30-flip-inner.is-flipped {
-      transform: rotateY(180deg);
-    }
-    .nd30-flip-face {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      border-radius: 20px;
-    }
-    .nd30-face-back {
-      transform: rotateY(180deg);
-    }
-
-    /* Action Buttons & Pills */
-    .view-mode-pill {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #94a3b8;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .view-mode-pill:hover, .view-mode-pill.active {
-      background: #dc2626;
-      border-color: #dc2626;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+      .nd30-view-container {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 20px !important;
+      }
     }
 
     .id-action-btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-weight: 800;
-      padding: 11px 20px;
+      font-weight: 700;
+      padding: 10px 18px;
       border-radius: 10px;
       cursor: pointer;
       font-size: 0.88rem;
       text-decoration: none;
-      transition: all 0.2s ease;
-      border: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      user-select: none;
     }
     .id-action-btn:hover {
       transform: translateY(-2px);
     }
+
+    .view-tab-btn {
+      padding: 8px 16px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .view-tab-btn.active {
+      background: #dc2626;
+      color: #ffffff;
+      border-color: #ef4444;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    }
   </style>
 
-  <div class="container" style="padding:40px 16px; max-width:960px; margin:0 auto;">
+  <div class="container" style="padding:36px 16px; max-width:920px; margin:0 auto;">
     <!-- Live Verification Shield Banner -->
-    <div class="no-print" style="background:linear-gradient(135deg, rgba(22, 101, 52, 0.25), rgba(21, 128, 61, 0.15)); border:2px solid #22c55e; border-radius:14px; padding:18px 24px; margin-bottom:28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:0 8px 24px rgba(34, 197, 94, 0.15);">
+    <div class="no-print" style="background:linear-gradient(135deg, rgba(22, 101, 52, 0.25), rgba(21, 128, 61, 0.15)); border:2px solid #22c55e; border-radius:14px; padding:18px 22px; margin-bottom:26px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:0 8px 24px rgba(34, 197, 94, 0.15);">
       <div style="display:flex; align-items:center; gap:14px;">
         <span style="display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; background:#22c55e; color:#fff; border-radius:50%; font-size:1.6rem; box-shadow:0 4px 12px rgba(34, 197, 94, 0.4);">
           ✓
         </span>
         <div>
-          <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#86efac; display:block;">
+          <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#86efac; display:block;">
             OFFICIAL DIGITAL VERIFICATION
           </span>
           <h2 style="margin:2px 0 0 0; font-size:1.25rem; font-weight:800; color:#ffffff;">
@@ -206,7 +156,7 @@ function renderVerifyPressIdPage(app, pressIdCode) {
         </div>
       </div>
       <div style="text-align:right;">
-        <span style="background:rgba(34, 197, 94, 0.2); border:1px solid #22c55e; color:#86efac; font-size:0.82rem; font-weight:900; padding:5px 14px; border-radius:6px; font-family:monospace; letter-spacing:0.8px;">
+        <span style="background:rgba(34, 197, 94, 0.2); border:1px solid #22c55e; color:#86efac; font-size:0.85rem; font-weight:900; padding:4px 12px; border-radius:6px; font-family:monospace; letter-spacing:0.8px;">
           ${escapeHtml(displayCode)}
         </span>
         <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">
@@ -215,116 +165,121 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       </div>
     </div>
 
-    <!-- Dual-Sided View Mode Switcher -->
-    <div class="no-print" style="display:flex; justify-content:center; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-      <button type="button" class="view-mode-pill active" id="pillFlip" onclick="setViewMode('flip')">
-        <span>🔄</span> 3D Flip Card (Interactive)
+    <!-- View Mode Switcher -->
+    <div class="no-print" style="display:flex; justify-content:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+      <button type="button" class="view-tab-btn active" id="tabFlip" onclick="switchView('flip')">
+        🎴 3D Flip Card
       </button>
-      <button type="button" class="view-mode-pill" id="pillSideBySide" onclick="setViewMode('side-by-side')">
-        <span>👥</span> Side-by-Side (Both Sides)
+      <button type="button" class="view-tab-btn" id="tabDual" onclick="switchView('dual')">
+        📑 Side-by-Side (Both Sides)
       </button>
-      <button type="button" class="view-mode-pill" id="pillFrontOnly" onclick="setViewMode('front-only')">
-        <span>📄</span> Front Side
+      <button type="button" class="view-tab-btn" id="tabFront" onclick="switchView('front')">
+        🪪 Front Side
       </button>
-      <button type="button" class="view-mode-pill" id="pillBackOnly" onclick="setViewMode('back-only')">
-        <span>📑</span> Back Side
+      <button type="button" class="view-tab-btn" id="tabBack" onclick="switchView('back')">
+        🔄 Back Side
       </button>
     </div>
 
-    <!-- Mode 1: 3D Flip Card View -->
-    <div id="view3dFlip" class="nd30-interactive-view" style="margin-bottom:28px;">
-      <div style="text-align:center; margin-bottom:10px;">
-        <span style="font-size:0.78rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:4px 12px; border-radius:14px; display:inline-flex; align-items:center; gap:6px;">
-          <span>💡</span> Click anywhere on card or flip button to rotate Front &amp; Back
-        </span>
-      </div>
-      <div class="nd30-card-stage-container">
-        <div class="nd30-flip-inner" id="nd30FlipStage" onclick="toggle3DFlip()">
-          <!-- FRONT FACE -->
-          <div class="nd30-flip-face nd30-face-front">
-            ${frontCardHtml}
+    <!-- Official Press ID Card Display Zone -->
+    <div class="nd30-printable-card-area" style="margin-bottom:28px;">
+      
+      <!-- MODE 1: Interactive 3D Flip Card (Default) -->
+      <div id="viewFlip" class="nd30-view-container" style="display:block; width:100%; max-width:440px; margin:0 auto; perspective:1200px;">
+        <div id="nd30CardFlipperPage" style="
+          position: relative;
+          width: 100%;
+          transform-style: preserve-3d;
+          transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+          cursor: pointer;
+        " onclick="togglePageCardFlip()" title="Click to Flip Card">
+          <!-- Front Face -->
+          <div style="width:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; container-type:inline-size;">
+            ${frontHtml}
           </div>
-          <!-- BACK FACE -->
-          <div class="nd30-flip-face nd30-face-back">
-            ${backCardHtml}
+          <!-- Back Face -->
+          <div style="position:absolute; top:0; left:0; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; transform:rotateY(180deg); container-type:inline-size;">
+            ${backHtml}
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:14px;" class="no-print">
+          <button type="button" onclick="togglePageCardFlip()" style="
+            background:rgba(220, 38, 38, 0.15);
+            border:1px solid #dc2626;
+            color:#f87171;
+            font-weight:700;
+            font-size:0.84rem;
+            padding:7px 18px;
+            border-radius:20px;
+            cursor:pointer;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+          ">
+            <span>🔄</span> <span id="flipHintLabel">Click Card to Flip between Front & Back</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MODE 2: Side-by-Side Dual View -->
+      <div id="viewDual" class="nd30-view-container" style="display:none; width:100%; max-width:920px; margin:0 auto;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:26px;">
+          <div style="flex:1; min-width:320px; max-width:440px; container-type:inline-size;">
+            <div class="no-print" style="font-size:0.82rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:8px;">
+              🪪 Front Side
+            </div>
+            ${frontHtml}
+          </div>
+          <div style="flex:1; min-width:320px; max-width:440px; container-type:inline-size;">
+            <div class="no-print" style="font-size:0.82rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:8px;">
+              🔄 Back Side
+            </div>
+            ${backHtml}
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Mode 2: Side-by-Side View -->
-    <div id="viewSideBySide" class="nd30-interactive-view" style="display:none; margin-bottom:28px;">
-      <div style="display:flex; justify-content:center; gap:24px; flex-wrap:wrap;">
-        <div style="flex:1; min-width:300px; max-width:400px;">
-          <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-            FRONT SIDE (PVC STANDARD)
-          </div>
-          ${frontCardHtml}
-        </div>
-        <div style="flex:1; min-width:300px; max-width:400px;">
-          <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-            BACK SIDE (ACCREDITATION &amp; QR)
-          </div>
-          ${backCardHtml}
-        </div>
+      <!-- MODE 3: Front Only -->
+      <div id="viewFront" class="nd30-view-container" style="display:none; width:100%; max-width:440px; margin:0 auto; container-type:inline-size;">
+        ${frontHtml}
+      </div>
+
+      <!-- MODE 4: Back Only -->
+      <div id="viewBack" class="nd30-view-container" style="display:none; width:100%; max-width:440px; margin:0 auto; container-type:inline-size;">
+        ${backHtml}
       </div>
     </div>
 
-    <!-- Mode 3: Front Only -->
-    <div id="viewFrontOnly" class="nd30-interactive-view" style="display:none; margin-bottom:28px; max-width:400px; margin-left:auto; margin-right:auto;">
-      <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-        FRONT SIDE (OFFICIAL BROADCAST BADGE)
-      </div>
-      ${frontCardHtml}
-    </div>
-
-    <!-- Mode 4: Back Only -->
-    <div id="viewBackOnly" class="nd30-interactive-view" style="display:none; margin-bottom:28px; max-width:400px; margin-left:auto; margin-right:auto;">
-      <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-        BACK SIDE (SECURITY &amp; QR CODE VERIFICATION)
-      </div>
-      ${backCardHtml}
-    </div>
-
-    <!-- Hidden Dual-Sided Print Container (Only visible during window.print) -->
-    <div class="nd30-print-dualsided-area" style="display:none;">
-      <div class="nd30-print-card-col">
-        ${frontCardHtml}
-      </div>
-      <div class="nd30-print-card-col">
-        ${backCardHtml}
-      </div>
-    </div>
-
-    <!-- Multi-Format Action Buttons -->
+    <!-- High-Resolution Download & Action Buttons -->
     <div class="no-print" style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:34px;">
-      <button type="button" onclick="downloadSideHd('front')" class="id-action-btn" style="background:linear-gradient(135deg, #dc2626, #991b1b); color:#ffffff; box-shadow:0 4px 14px rgba(220, 38, 38, 0.4);">
+      <button type="button" id="btnDownloadFront" onclick="downloadHdPressCard('front')" class="id-action-btn" style="background:linear-gradient(135deg, #dc2626, #991b1b); color:#ffffff; box-shadow:0 4px 14px rgba(220, 38, 38, 0.4);">
         <span>📥</span> Download Front (HD PNG)
       </button>
-      <button type="button" onclick="downloadSideHd('back')" class="id-action-btn" style="background:linear-gradient(135deg, #1e40af, #1e293b); color:#ffffff; box-shadow:0 4px 14px rgba(30, 64, 175, 0.35);">
+      <button type="button" id="btnDownloadBack" onclick="downloadHdPressCard('back')" class="id-action-btn" style="background:linear-gradient(135deg, #1e293b, #0f172a); color:#f8fafc; border:1px solid #334155; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
         <span>📥</span> Download Back (HD PNG)
       </button>
-      <button type="button" onclick="downloadBothSidesHd()" class="id-action-btn" style="background:linear-gradient(135deg, #15803d, #166534); color:#ffffff; box-shadow:0 4px 14px rgba(22, 101, 52, 0.35);">
-        <span>🪪</span> Download Both Sides (PNG)
+      <button type="button" id="btnDownloadBoth" onclick="downloadHdPressCard('both')" class="id-action-btn" style="background:linear-gradient(135deg, #1e3a8a, #1d4ed8); color:#ffffff; box-shadow:0 4px 14px rgba(30, 58, 138, 0.4);">
+        <span>📑</span> Download Complete Card (Both Sides)
       </button>
-      <button type="button" onclick="window.print()" class="id-action-btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-        <span>🖨️</span> Print Dual-Sided Card
+      <button type="button" onclick="window.print()" class="id-action-btn" style="background:#1e293b; color:#cbd5e1; border:1px solid #334155;">
+        <span>🖨️</span> Print Card
       </button>
       <a href="/as/" class="id-action-btn" style="background:#0f172a; color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.3);">
-        <span>🌐</span> Portal Home
+        <span>🌐</span> ND30 Portal Home
       </a>
     </div>
 
     <!-- Detailed Identity & Police Verification Sheet -->
     <div class="no-print" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; padding:24px 28px; margin-bottom:28px; box-shadow:0 4px 20px rgba(0,0,0,0.25);">
       <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-main); border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:18px; display:flex; align-items:center; gap:8px;">
-        <span>📋</span> Complete Accreditation &amp; Registry Verification
+        <span>📋</span> Accreditation & Verification Record
       </h3>
 
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px; font-size:0.92rem;">
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Full Name</span>
-          <strong style="color:var(--text-main); font-size:1.05rem;">${escapeHtml(fullName)}</strong>
+          <strong style="color:var(--text-main); font-size:1.05rem;">${escapeHtml(app.full_name)}</strong>
         </div>
 
         <div>
@@ -335,12 +290,12 @@ function renderVerifyPressIdPage(app, pressIdCode) {
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Designation / Role</span>
           <span style="display:inline-block; background:#dc2626; color:#fff; font-size:0.8rem; font-weight:800; padding:3px 12px; border-radius:14px; text-transform:uppercase; letter-spacing:0.6px; margin-top:2px;">
-            ${escapeHtml(designation)}
+            ${escapeHtml(app.designation || app.join_as || 'Reporter')}
           </span>
         </div>
 
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Assigned Territory</span>
+          <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Assigned Area & Territory</span>
           <strong style="color:#facc15; font-size:1rem;">📍 ${escapeHtml(areaDisplay)}</strong>
         </div>
 
@@ -351,8 +306,8 @@ function renderVerifyPressIdPage(app, pressIdCode) {
 
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Verified Mobile Contact</span>
-          <a href="tel:${escapeHtml(mobileNo)}" style="color:#22c55e; font-weight:700; text-decoration:none; font-size:1rem;">
-            📞 ${escapeHtml(mobileNo)}
+          <a href="tel:${escapeHtml(app.mobile_no)}" style="color:#22c55e; font-weight:700; text-decoration:none; font-size:1rem;">
+            📞 ${escapeHtml(app.mobile_no)}
           </a>
         </div>
 
@@ -369,7 +324,7 @@ function renderVerifyPressIdPage(app, pressIdCode) {
         <div style="grid-column: 1 / -1; border-top:1px solid var(--border-color); padding-top:14px; margin-top:4px;">
           <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block;">Permanent Residential Address</span>
           <span style="color:var(--text-main); line-height:1.5;">
-            Vill/Town: ${escapeHtml(app.village_town || 'N/A')}, PO: ${escapeHtml(app.post_office || 'N/A')}, PS: ${escapeHtml(app.police_station || 'N/A')}, District: ${escapeHtml(app.district)}, State: ${escapeHtml(app.state)} - PIN: ${escapeHtml(app.pin_code)}
+            Vill/Town: ${escapeHtml(app.village_town || 'N/A')}, PO: ${escapeHtml(app.post_office || 'N/A')}, PS: ${escapeHtml(app.police_station || 'N/A')}, District: ${escapeHtml(app.district)}, State: ${escapeHtml(app.state || 'Assam')} - PIN: ${escapeHtml(app.pin_code || 'N/A')}
           </span>
         </div>
       </div>
@@ -378,43 +333,46 @@ function renderVerifyPressIdPage(app, pressIdCode) {
     <!-- Official Press Privileges Notice for Police & Public Authorities -->
     <div class="no-print" style="background:#090d15; border:1px solid rgba(220, 38, 38, 0.35); border-radius:12px; padding:22px; font-size:0.88rem; color:#94a3b8; line-height:1.6; margin-bottom:28px;">
       <strong style="color:#f87171; display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:1rem;">
-        <span>🏛️</span> Notice for Civil Administration, Police &amp; Public Authorities:
+        <span>🏛️</span> Notice for Civil Administration, Police & Public Authorities:
       </strong>
-      The accredited bearer of this dual-sided PVC credential, <strong>${escapeHtml(fullName)}</strong> (Press ID: <code>${escapeHtml(displayCode)}</code>), is an authorized and accredited news correspondent representing <strong>ND30 LIVE</strong>. All civil, judicial, and law enforcement authorities, public administration officials, and emergency personnel are respectfully requested to extend all customary courtesies and cooperation to allow unhindered journalistic coverage and news gathering.
+      The accredited bearer of this credential, <strong>${escapeHtml(app.full_name)}</strong> (Press ID: <code>${escapeHtml(displayCode)}</code>), is an authorized and accredited news correspondent representing <strong>ND30 LIVE</strong>. All civil, judicial, and law enforcement authorities, public administration officials, and emergency personnel are respectfully requested to extend all customary courtesies and cooperation to allow unhindered journalistic coverage and news gathering.
       <br><br>
       For urgent institutional inquiries, live registry verification, or newsroom confirmation, please contact the Chief Editor's desk directly at <a href="mailto:nd30team@gmail.com" style="color:#38bdf8; font-weight:700;">nd30team@gmail.com</a>.
     </div>
   </div>
 
-  <!-- Client-Side Instant High-Res Dual-Sided PNG Generator -->
+  <!-- Interactive View Switcher & Client-Side HD Canvas Generator -->
   <script>
-    function toggle3DFlip() {
-      const stage = document.getElementById('nd30FlipStage');
-      if (stage) {
-        stage.classList.toggle('is-flipped');
+    let pageFlipped = false;
+
+    function togglePageCardFlip() {
+      const flipper = document.getElementById('nd30CardFlipperPage');
+      const label = document.getElementById('flipHintLabel');
+      if (!flipper) return;
+      pageFlipped = !pageFlipped;
+      flipper.style.transform = pageFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+      if (label) {
+        label.innerText = pageFlipped ? 'Showing Back Side (Click to Flip to Front)' : 'Showing Front Side (Click to Flip to Back)';
       }
     }
 
-    function setViewMode(mode) {
-      document.querySelectorAll('.view-mode-pill').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nd30-interactive-view').forEach(v => v.style.display = 'none');
-
-      if (mode === 'flip') {
-        document.getElementById('pillFlip').classList.add('active');
-        document.getElementById('view3dFlip').style.display = 'block';
-      } else if (mode === 'side-by-side') {
-        document.getElementById('pillSideBySide').classList.add('active');
-        document.getElementById('viewSideBySide').style.display = 'block';
-      } else if (mode === 'front-only') {
-        document.getElementById('pillFrontOnly').classList.add('active');
-        document.getElementById('viewFrontOnly').style.display = 'block';
-      } else if (mode === 'back-only') {
-        document.getElementById('pillBackOnly').classList.add('active');
-        document.getElementById('viewBackOnly').style.display = 'block';
-      }
+    function switchView(mode) {
+      const views = ['Flip', 'Dual', 'Front', 'Back'];
+      views.forEach(v => {
+        const el = document.getElementById('view' + v);
+        const tab = document.getElementById('tab' + v);
+        if (el) el.style.display = (v.toLowerCase() === mode) ? 'block' : 'none';
+        if (tab) {
+          if (v.toLowerCase() === mode) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        }
+      });
     }
 
-    const loadImage = (src) => new Promise((resolve) => {
+    const loadImageHelper = (src) => new Promise((resolve) => {
       if (!src) return resolve(null);
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -423,92 +381,141 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       img.src = src;
     });
 
-    // Draw Front Side onto a 2D canvas context
-    async function drawFrontSideToCanvas(ctx, ox = 0, oy = 0, cw = 663, ch = 1024) {
-      // White Base
+    /**
+     * Render Front Side onto 663x1024 Canvas at Ultra-Crisp Quality
+     */
+    async function renderFrontCanvas(ctx, W, H) {
+      // Background
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(ox, oy, cw, ch);
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle Watermark lines
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,0,0,0.035)';
+      ctx.lineWidth = 1;
+      for (let y = -H; y < H * 2; y += 22) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y + W * 0.7);
+        ctx.stroke();
+      }
+      ctx.restore();
 
       // Top Red Swoosh
       ctx.save();
+      ctx.fillStyle = '#b91c1c';
       ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.lineTo(ox + 430, oy);
-      ctx.bezierCurveTo(ox + 300, oy + 100, ox + 180, oy + 210, ox, oy + 250);
+      ctx.moveTo(200, 0);
+      ctx.bezierCurveTo(340, 0, 480, 40, 560, 90);
+      ctx.bezierCurveTo(610, 120, 640, 150, W, 170);
+      ctx.lineTo(W, 0);
       ctx.closePath();
-      const gradRed = ctx.createLinearGradient(ox, oy, ox + 400, oy + 250);
-      gradRed.addColorStop(0, '#b91c1c');
-      gradRed.addColorStop(0.5, '#dc2626');
-      gradRed.addColorStop(1, '#ef4444');
-      ctx.fillStyle = gradRed;
       ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(350, 0);
+      ctx.bezierCurveTo(460, 0, 550, 30, 600, 70);
+      ctx.lineTo(W, 110);
+      ctx.lineTo(W, 0);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
 
-      // Logo
-      const logoImg = await loadImage('/images/nd30_live_logo.png');
-      if (logoImg) {
-        ctx.drawImage(logoImg, ox + 80, oy + 22, 500, 105);
-      }
+      // ND30 LIVE Header Logo
+      ctx.save();
+      ctx.font = '900 64px "Arial Black", Impact, sans-serif';
+      ctx.fillStyle = '#dc2626';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillText('ND30', 270, 72);
 
-      // Blue Tagline Banner
-      const bGrad = ctx.createLinearGradient(ox + 60, oy + 138, ox + 600, oy + 138);
-      bGrad.addColorStop(0, '#1e40af');
-      bGrad.addColorStop(0.5, '#2563eb');
-      bGrad.addColorStop(1, '#1e3a8a');
-      ctx.fillStyle = bGrad;
+      // LIVE pill
+      const pillX = 360, pillY = 46, pillW = 125, pillH = 50, pillR = 25;
+      ctx.fillStyle = '#dc2626';
       ctx.beginPath();
-      ctx.roundRect(ox + 65, oy + 138, 533, 40, 6);
+      ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
       ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 28px "Arial Black", Impact, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('LIVE', pillX + (pillW / 2) + 6, pillY + (pillH / 2) + 1);
+
+      // Dot inside LIVE
+      ctx.beginPath();
+      ctx.arc(pillX + 22, pillY + (pillH / 2), 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+
+      // Slogan Ribbon
+      ctx.save();
+      const rX = 40, rY = 114, rW = W - 80, rH = 34;
+      const ribbonGrad = ctx.createLinearGradient(rX, 0, rX + rW, 0);
+      ribbonGrad.addColorStop(0, '#1e3a8a');
+      ribbonGrad.addColorStop(0.5, '#2563eb');
+      ribbonGrad.addColorStop(1, '#1e3a8a');
+      ctx.fillStyle = ribbonGrad;
+      ctx.beginPath();
+      ctx.roundRect(rX, rY, rW, rH, 6);
+      ctx.fill();
+
+      // Red end borders
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(rX, rY, 5, rH);
+      ctx.fillRect(rX + rW - 5, rY, 5, rH);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('// উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ //', ox + 331, oy + 158);
+      ctx.fillText('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', W / 2, rY + (rH / 2));
+      ctx.restore();
 
-      // Left PRESS Ribbon
-      const pGrad = ctx.createLinearGradient(ox, oy + 230, ox, oy + 770);
-      pGrad.addColorStop(0, '#b91c1c');
-      pGrad.addColorStop(0.5, '#dc2626');
-      pGrad.addColorStop(1, '#991b1b');
-      ctx.fillStyle = pGrad;
+      // Left Vertical Curved Red PRESS Ribbon
+      ctx.save();
+      const prW = 100, prH = 560, prY = 176;
+      const pressGrad = ctx.createLinearGradient(0, prY, 0, prY + prH);
+      pressGrad.addColorStop(0, '#ef4444');
+      pressGrad.addColorStop(0.5, '#dc2626');
+      pressGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = pressGrad;
       ctx.beginPath();
-      ctx.moveTo(ox, oy + 230);
-      ctx.lineTo(ox + 95, oy + 230);
-      ctx.bezierCurveTo(ox + 105, oy + 320, ox + 105, oy + 680, ox + 95, oy + 770);
-      ctx.lineTo(ox, oy + 770);
+      ctx.moveTo(0, prY);
+      ctx.lineTo(prW - 30, prY);
+      ctx.quadraticCurveTo(prW, prY + 50, prW, prY + 120);
+      ctx.lineTo(prW, prY + prH - 60);
+      ctx.quadraticCurveTo(prW, prY + prH, prW - 30, prY + prH);
+      ctx.lineTo(0, prY + prH);
       ctx.closePath();
       ctx.fill();
 
-      // Gold Border on PRESS Ribbon
+      ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 4;
-      ctx.strokeStyle = '#facc15';
       ctx.stroke();
 
       // Letters P R E S S
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 36px "Segoe UI", Arial, sans-serif';
+      ctx.font = '900 44px "Arial Black", Impact, sans-serif';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       const letters = ['P', 'R', 'E', 'S', 'S'];
       letters.forEach((l, i) => {
-        ctx.fillText(l, ox + 48, oy + 310 + (i * 96));
+        ctx.fillText(l, 46, prY + 65 + i * 95);
       });
+      ctx.restore();
 
-      // Reporter Photo
-      const photoUrl = '${photoUrl}';
-      let photoImg = await loadImage(photoUrl);
-      if (!photoImg) {
-        photoImg = await loadImage('/images/default_reporter_avatar.png');
-      }
-
-      const px = ox + 204, py = oy + 238, pw = 288, ph = 312, r = 14;
+      // Passport Photo
+      const px = 240, py = 186, pw = 280, ph = 310, pr = 16;
       ctx.save();
+      ctx.fillStyle = '#2ca9ed';
       ctx.beginPath();
-      ctx.roundRect(px, py, pw, ph, r);
+      ctx.roundRect(px, py, pw, ph, pr);
+      ctx.fill();
       ctx.clip();
+
+      const photoImg = await loadImageHelper('${photoUrl}') || await loadImageHelper('/images/default_reporter_avatar.png');
       if (photoImg) {
         const sRatio = photoImg.width / photoImg.height;
         const dRatio = pw / ph;
@@ -524,339 +531,423 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       }
       ctx.restore();
 
-      // Red border on photo
-      ctx.lineWidth = 4;
+      // Photo Frame Red Border
+      ctx.save();
       ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.roundRect(px, py, pw, ph, r);
+      ctx.roundRect(px, py, pw, ph, pr);
       ctx.stroke();
+      ctx.restore();
 
-      // 5 Detail Rows
-      const rowLabels = ['NAME', 'DESIGNATION', 'CODE', 'AREA', 'MOB.NO'];
-      const rowValues = [
-        '${escapeHtml(fullName)}',
-        '${escapeHtml(designation)}',
+      // 5 Rows Details
+      const labels = ['NAME', 'DESIGNATION', 'CODE', 'AREA', 'MOB.NO'];
+      const values = [
+        '${escapeHtml(app.full_name || 'Reporter')}',
+        '${escapeHtml(app.designation || app.join_as || 'Reporter')}',
         '${escapeHtml(displayCode)}',
         '${escapeHtml(areaDisplay)}',
-        '${escapeHtml(mobileNo)}'
+        '${escapeHtml(app.mobile_no || 'N/A')}'
       ];
 
-      rowLabels.forEach((label, i) => {
-        const ry = oy + 574 + (i * 44);
-        
-        // Red Label Tag
-        ctx.fillStyle = '#dc2626';
+      const startY = 525, rowH = 44, rowSpacing = 9;
+      const leftX = 135, totalW = W - leftX - 35;
+      const tagW = 165;
+
+      for (let i = 0; i < 5; i++) {
+        const ry = startY + i * (rowH + rowSpacing);
+
+        // Red Label Pill
+        ctx.save();
+        const tagGrad = ctx.createLinearGradient(leftX, 0, leftX + tagW, 0);
+        tagGrad.addColorStop(0, '#dc2626');
+        tagGrad.addColorStop(1, '#b91c1c');
+        ctx.fillStyle = tagGrad;
         ctx.beginPath();
-        ctx.moveTo(ox + 124, ry);
-        ctx.lineTo(ox + 275, ry);
-        ctx.lineTo(ox + 258, ry + 36);
-        ctx.lineTo(ox + 124, ry + 36);
-        ctx.closePath();
+        ctx.roundRect(leftX, ry, tagW, rowH, [8, 0, 0, 8]);
         ctx.fill();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'left';
+        ctx.font = '900 18px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(label, ox + 138, ry + 18);
+        ctx.fillText(labels[i], leftX + (tagW / 2), ry + (rowH / 2));
+        ctx.restore();
 
-        // Colon
-        ctx.fillStyle = '#dc2626';
-        ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(':', ox + 282, ry + 18);
-
-        // Value Box
-        ctx.strokeStyle = '#dc2626';
-        ctx.lineWidth = 1.8;
+        // White Value Slot
+        ctx.save();
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.roundRect(ox + 296, ry, 335, 36, [0, 8, 8, 0]);
+        ctx.roundRect(leftX + tagW, ry, totalW - tagW, rowH, [0, 8, 8, 0]);
         ctx.fill();
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        ctx.fillStyle = (i === 2) ? '#b91c1c' : '#0f172a';
-        ctx.font = (i === 2) ? '900 19px "Segoe UI", monospace' : 'bold 18px "Segoe UI", Arial, sans-serif';
-        let valText = rowValues[i];
-        while (ctx.measureText(valText).width > 310 && valText.length > 3) {
+        ctx.fillStyle = '#0f172a';
+        ctx.font = (i === 2) ? 'bold 22px monospace' : 'bold 20px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        // Truncate if long
+        let valText = ': ' + values[i];
+        const maxTextW = totalW - tagW - 20;
+        while (ctx.measureText(valText).width > maxTextW && valText.length > 5) {
           valText = valText.slice(0, -1);
         }
-        if (valText !== rowValues[i]) valText += '...';
-        ctx.fillText(valText, ox + 310, ry + 18);
-      });
+        if (valText !== (': ' + values[i])) valText += '...';
+        ctx.fillText(valText, leftX + tagW + 10, ry + (rowH / 2));
+        ctx.restore();
+      }
 
-      // Bottom Red Wave
+      // Bottom Wave Container
       ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(ox, oy + ch);
-      ctx.lineTo(ox, oy + 825);
-      ctx.bezierCurveTo(ox + 220, oy + 795, ox + 450, oy + 815, ox + cw, oy + 785);
-      ctx.lineTo(ox + cw, oy + ch);
-      ctx.closePath();
-      const waveGrad = ctx.createLinearGradient(ox, oy + 780, ox + cw, oy + ch);
-      waveGrad.addColorStop(0, '#991b1b');
-      waveGrad.addColorStop(0.5, '#dc2626');
-      waveGrad.addColorStop(1, '#881337');
+      const waveY = 820;
+      const waveGrad = ctx.createLinearGradient(0, waveY, W, H);
+      waveGrad.addColorStop(0, '#dc2626');
+      waveGrad.addColorStop(1, '#991b1b');
       ctx.fillStyle = waveGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, waveY + 30);
+      ctx.quadraticCurveTo(W / 2, waveY - 20, W, waveY + 25);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
       ctx.fill();
       ctx.restore();
 
-      // Signature & Signatory
-      const signImg = await loadImage('/images/nd30_sign_transparent.png');
+      // Bottom Left: QR Code Box
+      const qrBoxX = 35, qrBoxY = 852, qrBoxSize = 118;
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 12);
+      ctx.fill();
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 10;
+
+      const qrImg = await loadImageHelper('${qrSrc}');
+      if (qrImg) {
+        ctx.drawImage(qrImg, qrBoxX + 6, qrBoxY + 6, qrBoxSize - 12, qrBoxSize - 12);
+      }
+      ctx.restore();
+
+      // Bottom Right: Signatory & ND30 LIVE
+      ctx.save();
+      const signImg = await loadImageHelper('/images/nd30_sign_transparent.png');
       if (signImg) {
-        ctx.drawImage(signImg, ox + 420, oy + 845, 190, 55);
+        // Draw white signature
+        ctx.drawImage(signImg, W - 245, 856, 180, 55);
       }
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText('Authorised Signatory', ox + 615, oy + 920);
-      ctx.fillStyle = '#fecdd3';
-      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('ND30 LIVE NETWORK', ox + 615, oy + 940);
-
-      // Gold Seal on Left
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath();
-      ctx.arc(ox + 85, oy + 890, 24, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
-      ctx.fillStyle = '#090d16';
-      ctx.font = '900 11px "Segoe UI", Arial, sans-serif';
+      ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('ND30', ox + 85, oy + 885);
-      ctx.fillText('PASS', ox + 85, oy + 898);
+      ctx.fillText('Authorised Signatory', W - 150, 924);
 
-      // Bottom edge banner
-      ctx.fillStyle = '#7f1d1d';
-      ctx.fillRect(ox, oy + ch - 30, cw, 30);
       ctx.fillStyle = '#fef08a';
-      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+      ctx.font = '900 21px "Arial Black", Impact, sans-serif';
+      ctx.fillText('ND30 LIVE', W - 150, 948);
+      ctx.restore();
+
+      // Very Bottom Banner Strip: "Scan the QR for Live Verification"
+      ctx.save();
+      ctx.fillStyle = '#7f1d1d';
+      ctx.fillRect(0, H - 36, W, 36);
+
+      ctx.fillStyle = '#fef08a';
+      ctx.font = '900 16px "Segoe UI", Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('OFFICIAL MEDIA ACCREDITATION CARD', ox + 331, oy + ch - 15);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('● SCAN THE QR FOR LIVE VERIFICATION ●', W / 2, H - 18);
+      ctx.restore();
     }
 
-    // Draw Back Side onto a 2D canvas context
-    async function drawBackSideToCanvas(ctx, ox = 0, oy = 0, cw = 663, ch = 1024) {
-      // White Base
+    /**
+     * Render Back Side onto 663x1024 Canvas at Ultra-Crisp Quality
+     */
+    async function renderBackCanvas(ctx, W, H) {
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(ox, oy, cw, ch);
+      ctx.fillRect(0, 0, W, H);
 
-      // Header Navy Banner
-      const navGrad = ctx.createLinearGradient(ox, oy, ox + cw, oy + 120);
-      navGrad.addColorStop(0, '#090d16');
-      navGrad.addColorStop(0.7, '#1e293b');
-      navGrad.addColorStop(1, '#881337');
-      ctx.fillStyle = navGrad;
-      ctx.fillRect(ox, oy, cw, 120);
-
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(ox, oy + 120, cw, 4);
-
-      const logoImg = await loadImage('/images/nd30_live_logo.png');
-      if (logoImg) {
-        ctx.drawImage(logoImg, ox + 24, oy + 26, 170, 48);
-      }
-
-      ctx.fillStyle = '#facc15';
-      ctx.font = '900 17px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('PRESS ACCREDITATION PASS', ox + 210, oy + 42);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('DIRECTORATE OF NEWS & FIELD COVERAGE', ox + 210, oy + 64);
-
-      // QR Code Box
-      ctx.fillStyle = '#f8fafc';
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(ox + 24, oy + 145, cw - 48, 175, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      // Inner white QR box
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.roundRect(ox + 42, oy + 160, 140, 140, 10);
-      ctx.fill();
-      ctx.stroke();
-
-      const qrUrl = '${qrSrc}';
-      if (qrUrl) {
-        const qrImg = await loadImage(qrUrl);
-        if (qrImg) {
-          ctx.drawImage(qrImg, ox + 48, oy + 166, 128, 128);
-        }
-      }
-
-      ctx.fillStyle = '#15803d';
-      ctx.font = 'bold 17px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('🔒 SECURED DIGITAL QR CODE', ox + 204, oy + 185);
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '13px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('Scan with smartphone camera to view live accreditation', ox + 204, oy + 214);
-      ctx.fillText('registry, validity period, and police verification online.', ox + 204, oy + 234);
-
-      ctx.fillStyle = '#dc2626';
-      ctx.font = 'bold 16px "Segoe UI", monospace';
-      ctx.fillText('PRESS ID: ${escapeHtml(displayCode)}', ox + 204, oy + 272);
-
-      // 4 Grid Pills
-      const gridItems = [
-        { label: "Father's Name", val: "${escapeHtml(app.father_name || 'Record on File')}" },
-        { label: "Accredited Role", val: "${escapeHtml(designation)}" },
-        { label: "Date of Issue", val: "${issueDateFormatted}" },
-        { label: "Validity Period", val: "Until ${expiryDateFormatted}" }
-      ];
-
-      const gw = (cw - 48 - 14) / 2;
-      gridItems.forEach((item, idx) => {
-        const col = idx % 2;
-        const row = Math.floor(idx / 2);
-        const gx = ox + 24 + (col * (gw + 14));
-        const gy = oy + 340 + (row * 72);
-
-        ctx.fillStyle = '#f8fafc';
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1.2;
+      // Watermark lines
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,0,0,0.035)';
+      ctx.lineWidth = 1;
+      for (let y = -H; y < H * 2; y += 22) {
         ctx.beginPath();
-        ctx.roundRect(gx, gy, gw, 60, 8);
-        ctx.fill();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y + W * 0.7);
         ctx.stroke();
+      }
+      ctx.restore();
 
-        ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(item.label.toUpperCase(), gx + 14, gy + 20);
+      // Top Back Header
+      ctx.save();
+      const hGrad = ctx.createLinearGradient(0, 0, W, 0);
+      hGrad.addColorStop(0, '#b91c1c');
+      hGrad.addColorStop(0.5, '#dc2626');
+      hGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = hGrad;
+      ctx.fillRect(0, 0, W, 95);
 
-        ctx.fillStyle = (idx === 1) ? '#b91c1c' : (idx === 3 ? '#15803d' : '#0f172a');
-        ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(item.val, gx + 14, gy + 42);
-      });
+      ctx.fillStyle = '#fef08a';
+      ctx.font = '900 28px "Arial Black", Impact, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ND30 LIVE  •  PVC STANDARD', W / 2, 38);
 
-      // Residential Address Box
-      const ay = oy + 500;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('OFFICIAL PRESS ACCREDITATION CREDENTIAL', W / 2, 68);
+      ctx.restore();
+
+      // Police & Authorities Notice Box
+      ctx.save();
+      const nbX = 35, nbY = 120, nbW = W - 70, nbH = 200;
       ctx.fillStyle = '#f8fafc';
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.roundRect(ox + 24, ay, cw - 48, 110, 10);
+      ctx.roundRect(nbX, nbY, nbW, nbH, 12);
       ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('RESIDENTIAL ADDRESS ON RECORD', ox + 40, ay + 24);
-
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
-      const addrLine1 = 'Vill/Town: ${escapeHtml(app.village_town || 'N/A')}, PO: ${escapeHtml(app.post_office || 'N/A')}';
-      const addrLine2 = 'PS: ${escapeHtml(app.police_station || 'N/A')}, Dist: ${escapeHtml(app.district)}, ${escapeHtml(app.state || 'Assam')} - ${escapeHtml(app.pin_code || 'N/A')}';
-      ctx.fillText(addrLine1, ox + 40, ay + 52);
-      ctx.fillText(addrLine2, ox + 40, ay + 78);
-
-      // Police & Authority Notice Box
-      const ny = oy + 630;
-      ctx.fillStyle = 'rgba(220, 38, 38, 0.05)';
       ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 3.5;
-      ctx.beginPath();
-      ctx.roundRect(ox + 24, ny, cw - 48, 140, 8);
-      ctx.fill();
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.fillStyle = '#b91c1c';
-      ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('NOTICE FOR POLICE, PARAMILITARY & CIVIL AUTHORITIES:', ox + 42, ny + 26);
+      ctx.font = '900 18px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🏛️ NOTICE TO CIVIL, POLICE & EMERGENCY AUTHORITIES', nbX + 16, nbY + 30);
 
       ctx.fillStyle = '#334155';
-      ctx.font = '13px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('This Press Card is the official property of ND30 LIVE Network. The bearer', ox + 42, ny + 54);
-      ctx.fillText('is an accredited media correspondent authorized for field news coverage.', ox + 42, ny + 74);
-      ctx.fillText('Police and Administrative authorities are respectfully requested to extend all', ox + 42, ny + 94);
-      ctx.fillText('customary cooperation and unhindered passage in the performance of duty.', ox + 42, ny + 114);
+      ctx.font = '600 15px "Segoe UI", Arial, sans-serif';
+      const noticeLines = [
+        "The accredited bearer is an authorized press correspondent representing ND30 LIVE Network.",
+        "Under constitutional protection of freedom of the press, all civil administration, security forces,",
+        "police departments, and emergency personnel are respectfully requested to extend customary",
+        "professional courtesies and unhindered passage for lawful news gathering and field reporting.",
+        "",
+        "For urgent editorial or registry confirmation: nd30team@gmail.com | Guwahati, Assam"
+      ];
+      noticeLines.forEach((line, idx) => {
+        ctx.fillText(line, nbX + 16, nbY + 62 + idx * 23);
+      });
+      ctx.restore();
 
-      // Bureau Desk & Barcode
+      // Holder Particulars Box
+      ctx.save();
+      const pbX = 35, pbY = 345, pbW = W - 70, pbH = 290;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(pbX, pbY, pbW, pbH, 12);
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
       ctx.fillStyle = '#0f172a';
-      ctx.fillRect(ox, oy + ch - 70, cw, 42);
+      ctx.font = '900 19px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('📋 HOLDER PROFILE & PERMANENT RECORD', pbX + 16, pbY + 32);
 
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('Editorial Desk: nd30team@gmail.com', ox + 30, oy + ch - 44);
+      ctx.fillStyle = '#dc2626';
+      ctx.font = 'bold 20px monospace';
       ctx.textAlign = 'right';
-      ctx.fillText('Central Bureau: Guwahati, Assam', ox + cw - 30, oy + ch - 44);
+      ctx.fillText('${escapeHtml(displayCode)}', pbX + pbW - 16, pbY + 32);
 
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(ox, oy + ch - 28, cw, 28);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('||||||| | ||||| |||||| | |||||||| |||| | ||||||| |||||||', ox + 331, oy + ch - 10);
-    }
+      ctx.strokeStyle = '#f1f5f9';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pbX + 16, pbY + 45);
+      ctx.lineTo(pbX + pbW - 16, pbY + 45);
+      ctx.stroke();
 
-    // Trigger Download for Front or Back
-    async function downloadSideHd(side) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 663;
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d');
+      ctx.textAlign = 'left';
+      ctx.font = '16px "Segoe UI", Arial, sans-serif';
+      const details = [
+        ['Full Name:', '${escapeHtml(app.full_name || 'Reporter')}'],
+        ['Father\\'s Name:', '${escapeHtml(app.father_name || 'N/A')}'],
+        ['Designation:', '${escapeHtml(app.designation || app.join_as || 'Reporter')}'],
+        ['Contact Mobile:', '${escapeHtml(app.mobile_no || 'N/A')}'],
+        ['Date of Issue:', '${issueDateFormatted}'],
+        ['Valid Until:', 'Valid Until ${expiryDateFormatted}']
+      ];
 
-      if (side === 'front') {
-        await drawFrontSideToCanvas(ctx, 0, 0, 663, 1024);
-      } else {
-        await drawBackSideToCanvas(ctx, 0, 0, 663, 1024);
+      for (let i = 0; i < details.length; i++) {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const dx = pbX + 16 + col * (pbW / 2);
+        const dy = pbY + 75 + row * 45;
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '600 14px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(details[i][0], dx, dy);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(details[i][1], dx, dy + 20);
       }
 
-      const link = document.createElement('a');
-      link.download = 'ND30_PRESS_CARD_' + side.toUpperCase() + '_${displayCode}.png';
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Address line
+      const ady = pbY + 225;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.beginPath();
+      ctx.moveTo(pbX + 16, ady - 12);
+      ctx.lineTo(pbX + pbW - 16, ady - 12);
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '600 14px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('Permanent Address:', pbX + 16, ady + 4);
+
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('Vill/Town: ${escapeHtml(app.village_town || 'N/A')}, PO: ${escapeHtml(app.post_office || 'N/A')}, PS: ${escapeHtml(app.police_station || 'N/A')}', pbX + 16, ady + 26);
+      ctx.fillText('District: ${escapeHtml(app.district || 'Assam')}, State: ${escapeHtml(app.state || 'Assam')} - PIN: ${escapeHtml(app.pin_code || 'N/A')}', pbX + 16, ady + 48);
+      ctx.restore();
+
+      // Security Seal & Barcode Strip
+      ctx.save();
+      const sbX = 35, sbY = 655, sbW = W - 70, sbH = 140;
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.roundRect(sbX, sbY, sbW, sbH, 12);
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.stroke();
+
+      // Draw Barcode lines
+      const bcX = sbX + 24, bcY = sbY + 22, bcW = 380, bcH = 65;
+      ctx.fillStyle = '#0f172a';
+      for (let i = 0; i < 48; i++) {
+        const lw = (i % 3 === 0 ? 5 : (i % 2 === 0 ? 2 : 3));
+        const lx = bcX + i * 7.8;
+        ctx.fillRect(lx, bcY, lw, bcH);
+      }
+
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('*${escapeHtml(displayCode)}*', bcX + (bcW / 2), bcY + bcH + 24);
+
+      // Circular Seal Stamp
+      const sealX = sbX + sbW - 85, sealY = sbY + (sbH / 2), sealR = 50;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, sealR, 0, Math.PI * 2);
+      ctx.fillStyle = '#fee2e2';
+      ctx.fill();
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, sealR - 6, 0, Math.PI * 2);
+      ctx.strokeStyle = '#b91c1c';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#b91c1c';
+      ctx.font = '900 12px "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ND30 LIVE', sealX, sealY - 18);
+      ctx.font = '16px serif';
+      ctx.fillText('★', sealX, sealY);
+      ctx.font = 'bold 10px "Segoe UI", sans-serif';
+      ctx.fillText('VERIFIED', sealX, sealY + 16);
+      ctx.restore();
+
+      // Legal Disclaimer
+      ctx.save();
+      ctx.fillStyle = '#64748b';
+      ctx.font = '600 13px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('This credential remains the exclusive property of ND30 LIVE. Misuse or forgery is strictly punishable by law.', W / 2, 850);
+      ctx.fillText('If found, please return to: ND30 LIVE Newsroom Desk, Guwahati, Assam - 781001', W / 2, 874);
+      ctx.restore();
+
+      // Bottom Back Strip
+      ctx.save();
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, H - 45, W, 45);
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(0, H - 45, W, 4);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ND30 LIVE DIGITAL NETWORK  •  GUWAHATI, ASSAM  •  WWW.ND30LIVE.IN', W / 2, H - 21);
+      ctx.restore();
     }
 
-    // Trigger Download for Both Sides (Dual Side Studio Canvas)
-    async function downloadBothSidesHd() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1440;
-      canvas.height = 1140;
-      const ctx = canvas.getContext('2d');
+    /**
+     * Download High-Definition (HD) Press Card PNG
+     * @param {'front' | 'back' | 'both'} side
+     */
+    async function downloadHdPressCard(side) {
+      const btn = document.getElementById(side === 'front' ? 'btnDownloadFront' : (side === 'back' ? 'btnDownloadBack' : 'btnDownloadBoth'));
+      const origText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Generating HD PNG...';
+      }
 
-      // Studio Dark Background
-      const bgGrad = ctx.createLinearGradient(0, 0, 1440, 1140);
-      bgGrad.addColorStop(0, '#090d16');
-      bgGrad.addColorStop(1, '#1e293b');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 1440, 1140);
+      try {
+        const W = 663, H = 1024;
+        const canvas = document.createElement('canvas');
 
-      // Header Bar
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('ND30 LIVE OFFICIAL DUAL-SIDED PRESS ACCREDITATION BADGE', 720, 45);
+        if (side === 'both') {
+          // Double width canvas for side-by-side export
+          canvas.width = W * 2 + 40;
+          canvas.height = H;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#0b0f19';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#facc15';
-      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('Accredited Field Correspondent: ${escapeHtml(fullName)} (${displayCode}) • Directorate of News', 720, 72);
+          // Draw Front
+          const frontCanvas = document.createElement('canvas');
+          frontCanvas.width = W;
+          frontCanvas.height = H;
+          await renderFrontCanvas(frontCanvas.getContext('2d'), W, H);
+          ctx.drawImage(frontCanvas, 0, 0);
 
-      // Draw Front on Left (x: 45, y: 95)
-      await drawFrontSideToCanvas(ctx, 45, 95, 663, 1024);
+          // Draw Back
+          const backCanvas = document.createElement('canvas');
+          backCanvas.width = W;
+          backCanvas.height = H;
+          await renderBackCanvas(backCanvas.getContext('2d'), W, H);
+          ctx.drawImage(backCanvas, W + 40, 0);
 
-      // Draw Back on Right (x: 732, y: 95)
-      await drawBackSideToCanvas(ctx, 732, 95, 663, 1024);
+        } else if (side === 'back') {
+          canvas.width = W;
+          canvas.height = H;
+          await renderBackCanvas(canvas.getContext('2d'), W, H);
+        } else {
+          // Front
+          canvas.width = W;
+          canvas.height = H;
+          await renderFrontCanvas(canvas.getContext('2d'), W, H);
+        }
 
-      const link = document.createElement('a');
-      link.download = 'ND30_DUAL_SIDED_PRESS_BADGE_${displayCode}.png';
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        const link = document.createElement('a');
+        link.download = 'ND30_PRESS_ID_' + side.toUpperCase() + '_${displayCode}.png';
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>✅</span> Downloaded!';
+          setTimeout(() => {
+            btn.innerHTML = origText;
+          }, 3500);
+        }
+      } catch (err) {
+        console.error('Download error:', err);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+        alert('Failed to generate HD card download: ' + err.message);
+      }
     }
   </script>
   `;

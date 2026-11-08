@@ -1,7 +1,7 @@
 /**
  * ND30 LIVE - Press ID Card & QR Code Service
- * Generates official Digital Press ID Cards, creates secured QR codes for public verification,
- * and handles automatic email notifications on application approval/rejection.
+ * Generates official Digital Press ID Cards (Dual-Sided with Live Verification QR Code),
+ * creates secured QR codes for public verification, and handles email notifications.
  */
 
 const QRCode = require('qrcode');
@@ -97,11 +97,12 @@ async function generatePressIdQrCode(pressIdCode) {
 }
 
 /**
- * Render Official ND30 LIVE Press ID Card - FRONT SIDE
- * Crisp, vector-built PVC vertical format with 3D logo, vertical PRESS ribbon,
- * bordered photo frame, 5 stylized detail rows, and authentic authorized signature.
+ * Render Front Side HTML of the Official ND30 LIVE Press ID Card
+ * Includes 3D ND30 LIVE header logo, Assamese slogan ribbon, vertical PRESS ribbon,
+ * bordered photo frame, 5 crisp details rows, live QR code on bottom-left,
+ * authorised signature on bottom-right, and bottom text "Scan the QR for Live Verification".
  */
-function renderPressCardFrontHtml(app) {
+function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
   if (!app) return '';
 
   const displayCode = app.press_id_code 
@@ -127,225 +128,485 @@ function renderPressCardFrontHtml(app) {
     ? (app.photo_file.startsWith('http') ? app.photo_file : `${BASE_URL}${app.photo_file}`) 
     : `${BASE_URL}/images/default_reporter_avatar.png`;
 
+  const qrSrc = qrDataUrl || (app.press_id_qr ? (app.press_id_qr.startsWith('http') ? app.press_id_qr : `${BASE_URL}${app.press_id_qr}`) : '');
+
   return `
-  <div class="nd30-pvc-card nd30-pvc-card-front" style="
+  <div class="nd30-card-front" style="
     position: relative;
     width: 100%;
     aspect-ratio: 663 / 1024;
-    background: #ffffff;
     border-radius: 20px;
     overflow: hidden;
+    background: #ffffff;
     box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(220, 38, 38, 0.35);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     user-select: none;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     box-sizing: border-box;
   ">
-    <!-- Background Watermark Pattern -->
-    <div style="position:absolute; inset:0; pointer-events:none; z-index:1; opacity:0.04; background-image:radial-gradient(#0f172a 1px, transparent 1px); background-size:16px 16px;"></div>
+    <!-- Security Watermark Background Pattern -->
+    <div style="
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.045;
+      background-image: repeating-linear-gradient(
+        -35deg,
+        #000000 0,
+        #000000 1px,
+        transparent 1px,
+        transparent 28px
+      );
+      pointer-events: none;
+      z-index: 1;
+    "></div>
 
-    <!-- Top Left Dynamic Red Swoosh with White Piping -->
-    <svg style="position:absolute; top:0; left:0; width:65%; height:28%; z-index:2; pointer-events:none;" viewBox="0 0 380 200" fill="none" preserveAspectRatio="none">
-      <path d="M0,0 L260,0 C180,60 120,130 0,160 Z" fill="url(#gradTopRed)" />
-      <path d="M0,0 L260,0 C180,60 120,130 0,160 Z" stroke="#ffffff" stroke-width="3" opacity="0.8" />
-      <path d="M0,0 L280,0 C200,70 140,145 0,180 Z" fill="none" stroke="#dc2626" stroke-width="2" opacity="0.4" />
+    <!-- Top Watermark Text Grid -->
+    <div style="
+      position: absolute;
+      top: 15px; left: 10px; right: 10px; height: 180px;
+      opacity: 0.055;
+      font-size: 13px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.8;
+      letter-spacing: 4px;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+      transform: rotate(-12deg);
+      white-space: nowrap;
+    ">
+      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
+      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
+      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
+      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30<br>
+      ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30 ND30
+    </div>
+
+    <!-- Top Header Corner Curve Swoosh -->
+    <svg style="position:absolute; top:0; right:0; width:100%; height:110px; z-index:1; pointer-events:none;" viewBox="0 0 663 170" fill="none" preserveAspectRatio="none">
+      <path d="M663 0H200C320 0 450 30 520 80C590 130 630 170 663 170V0Z" fill="url(#topWaveGrad)" />
+      <path d="M663 0H350C440 0 530 25 580 65C630 105 650 140 663 150V0Z" fill="#dc2626" fill-opacity="0.25" />
       <defs>
-        <linearGradient id="gradTopRed" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#b91c1c" />
-          <stop offset="50%" stop-color="#dc2626" />
-          <stop offset="100%" stop-color="#ef4444" />
+        <linearGradient id="topWaveGrad" x1="200" y1="0" x2="663" y2="170" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ef4444"/>
+          <stop offset="1" stop-color="#b91c1c"/>
         </linearGradient>
       </defs>
     </svg>
 
-    <!-- Top Right Globe Map Watermark -->
-    <svg style="position:absolute; top:8px; right:8px; width:44%; height:26%; z-index:2; opacity:0.18; pointer-events:none;" viewBox="0 0 200 160" fill="none">
-      <circle cx="120" cy="70" r="60" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="3 3" />
-      <ellipse cx="120" cy="70" rx="60" ry="25" stroke="#0284c7" stroke-width="1.2" />
-      <ellipse cx="120" cy="70" rx="60" ry="45" stroke="#0284c7" stroke-width="1.2" />
-      <line x1="120" y1="10" x2="120" y2="130" stroke="#0284c7" stroke-width="1.5" />
-      <line x1="60" y1="70" x2="180" y2="70" stroke="#0284c7" stroke-width="1.5" />
-    </svg>
-
-    <!-- Header Section: Official Logo & Tagline Banner -->
-    <div style="position:relative; z-index:3; padding-top:14px; text-align:center;">
-      <img 
-        src="${BASE_URL}/images/nd30_live_logo.png" 
-        alt="ND30 LIVE" 
-        style="height:62px; max-width:82%; object-fit:contain; margin:0 auto; display:block; filter:drop-shadow(0 4px 10px rgba(220, 38, 38, 0.35));"
-      >
-
-      <!-- Tagline Ribbon Banner -->
-      <div style="margin-top:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(90deg, #1e40af, #2563eb, #1e3a8a); padding:5px 16px; border-radius:4px; box-shadow:0 3px 8px rgba(30, 64, 175, 0.35); max-width:90%;">
-        <span style="color:#ef4444; font-weight:900; font-size:0.85rem; letter-spacing:1px;">//</span>
-        <span style="color:#ffffff; font-weight:800; font-size:0.75rem; letter-spacing:0.4px; white-space:nowrap;">উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ</span>
-        <span style="color:#ef4444; font-weight:900; font-size:0.85rem; letter-spacing:1px;">//</span>
+    <!-- HEADER BLOCK -->
+    <div style="position:relative; z-index:2; padding:14px 16px 4px 16px; text-align:center;">
+      <!-- ND30 LIVE Official 3D Logo Header -->
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:2px;">
+        <span style="
+          font-family:'Arial Black', Impact, sans-serif;
+          font-size:clamp(1.9rem, 10.5cqw, 2.9rem);
+          font-weight:900;
+          color:#dc2626;
+          letter-spacing:1px;
+          line-height:1;
+          text-shadow:
+            -1.5px -1.5px 0 #ffffff,
+             1.5px -1.5px 0 #ffffff,
+            -1.5px  1.5px 0 #ffffff,
+             1.5px  1.5px 0 #ffffff,
+             0 3px 6px rgba(0,0,0,0.3);
+        ">ND30</span>
+        <span style="
+          background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+          color:#ffffff;
+          font-family:'Arial Black', Impact, sans-serif;
+          font-size:clamp(0.95rem, 5.2cqw, 1.45rem);
+          font-weight:900;
+          letter-spacing:3px;
+          padding:3px 16px;
+          border-radius:999px;
+          box-shadow:inset 0 1px 2px rgba(255,255,255,0.7), 0 3px 8px rgba(185, 28, 28, 0.45);
+          display:inline-flex;
+          align-items:center;
+          gap:6px;
+        ">
+          <span style="width:7px; height:7px; background:#fff; border-radius:50%; display:inline-block; box-shadow:0 0 6px #fff;"></span>
+          LIVE
+        </span>
       </div>
-    </div>
 
-    <!-- Left Curved "PRESS" Ribbon -->
-    <div style="
-      position: absolute;
-      left: 0;
-      top: 22.5%;
-      bottom: 24.5%;
-      width: 14.5%;
-      background: linear-gradient(180deg, #b91c1c 0%, #dc2626 50%, #991b1b 100%);
-      border-top-right-radius: 30px;
-      border-bottom-right-radius: 30px;
-      border-right: 3.5px solid #facc15;
-      box-shadow: inset -2px 0 6px rgba(0,0,0,0.25), 4px 0 14px rgba(220, 38, 38, 0.3);
-      z-index: 4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-around;
-      padding: 18px 0;
-      box-sizing: border-box;
-    ">
-      <span style="color:#ffffff; font-weight:900; font-size:1.45rem; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.6);">P</span>
-      <span style="color:#ffffff; font-weight:900; font-size:1.45rem; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.6);">R</span>
-      <span style="color:#ffffff; font-weight:900; font-size:1.45rem; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.6);">E</span>
-      <span style="color:#ffffff; font-weight:900; font-size:1.45rem; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.6);">S</span>
-      <span style="color:#ffffff; font-weight:900; font-size:1.45rem; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.6);">S</span>
-    </div>
-
-    <!-- Center Photo Slot with Crisp Frame -->
-    <div style="
-      position: absolute;
-      top: 23%;
-      left: 28.5%;
-      right: 18%;
-      height: 31%;
-      z-index: 4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    ">
+      <!-- Assamese Official Slogan Ribbon -->
       <div style="
-        width: 100%;
-        max-width: 195px;
-        height: 100%;
-        border-radius: 14px;
-        border: 3.5px solid #dc2626;
-        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.25), 0 3px 8px rgba(0,0,0,0.2);
-        overflow: hidden;
-        background: #2ca9ed;
-        box-sizing: border-box;
+        background:linear-gradient(90deg, #1e3a8a 0%, #2563eb 50%, #1e3a8a 100%);
+        border-radius:6px;
+        padding:4px 10px;
+        margin:6px auto 0 auto;
+        max-width:92%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:6px;
+        box-shadow:0 3px 10px rgba(30, 58, 138, 0.35);
+        border-left:3.5px solid #dc2626;
+        border-right:3.5px solid #dc2626;
       ">
-        <img 
-          src="${photoUrl}" 
-          alt="${escapeHtml(fullName)}" 
-          style="width:100%; height:100%; object-fit:cover; display:block;"
-          onerror="this.onerror=null; this.src='${BASE_URL}/images/default_reporter_avatar.png';"
-        >
+        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.7rem, 3.5cqw, 0.95rem);">//</span>
+        <span style="
+          color:#ffffff;
+          font-weight:800;
+          font-size:clamp(0.68rem, 3.4cqw, 0.92rem);
+          letter-spacing:0.3px;
+          text-shadow:0 1px 2px rgba(0,0,0,0.5);
+          white-space:nowrap;
+        ">
+          উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ
+        </span>
+        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.7rem, 3.5cqw, 0.95rem);">//</span>
       </div>
     </div>
 
-    <!-- 5 Clean Detail Rows (Vector Engineered, No Blur, No Misalignment) -->
-    <div style="
-      position: absolute;
-      top: 55.5%;
-      left: 17%;
-      right: 4.5%;
-      z-index: 4;
-      display: flex;
-      flex-direction: column;
-      gap: 6.5px;
-    ">
-      <!-- Row 1: NAME -->
-      <div style="display:flex; align-items:center;">
-        <div style="background:linear-gradient(135deg, #b91c1c, #dc2626); color:#fff; font-weight:900; font-size:0.72rem; letter-spacing:0.6px; padding:5px 12px; clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%); border-radius:5px 0 0 5px; width:98px; flex-shrink:0; text-transform:uppercase;">
-          NAME
-        </div>
-        <span style="color:#dc2626; font-weight:900; font-size:0.95rem; margin:0 4px;">:</span>
-        <div style="flex:1; background:#ffffff; border:1.5px solid #dc2626; border-radius:0 7px 7px 0; padding:4px 10px; font-weight:800; color:#0f172a; font-size:0.86rem; box-shadow:0 1px 3px rgba(220,38,38,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(fullName)}">
-          ${escapeHtml(fullName)}
-        </div>
-      </div>
-
-      <!-- Row 2: DESIGNATION -->
-      <div style="display:flex; align-items:center;">
-        <div style="background:linear-gradient(135deg, #b91c1c, #dc2626); color:#fff; font-weight:900; font-size:0.72rem; letter-spacing:0.6px; padding:5px 12px; clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%); border-radius:5px 0 0 5px; width:98px; flex-shrink:0; text-transform:uppercase;">
-          DESIGNATION
-        </div>
-        <span style="color:#dc2626; font-weight:900; font-size:0.95rem; margin:0 4px;">:</span>
-        <div style="flex:1; background:#ffffff; border:1.5px solid #dc2626; border-radius:0 7px 7px 0; padding:4px 10px; font-weight:800; color:#0f172a; font-size:0.86rem; box-shadow:0 1px 3px rgba(220,38,38,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(designation)}">
-          ${escapeHtml(designation)}
-        </div>
-      </div>
-
-      <!-- Row 3: CODE -->
-      <div style="display:flex; align-items:center;">
-        <div style="background:linear-gradient(135deg, #b91c1c, #dc2626); color:#fff; font-weight:900; font-size:0.72rem; letter-spacing:0.6px; padding:5px 12px; clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%); border-radius:5px 0 0 5px; width:98px; flex-shrink:0; text-transform:uppercase;">
-          CODE
-        </div>
-        <span style="color:#dc2626; font-weight:900; font-size:0.95rem; margin:0 4px;">:</span>
-        <div style="flex:1; background:#ffffff; border:1.5px solid #dc2626; border-radius:0 7px 7px 0; padding:4px 10px; font-weight:900; color:#b91c1c; font-family:'Segoe UI', monospace; font-size:0.92rem; letter-spacing:0.8px; box-shadow:0 1px 3px rgba(220,38,38,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(displayCode)}">
-          ${escapeHtml(displayCode)}
+    <!-- MIDDLE BODY: PRESS Ribbon (Left) + Photo & Details (Right) -->
+    <div style="position:relative; z-index:2; display:flex; flex:1; padding:4px 14px 4px 0; align-items:stretch;">
+      <!-- Vertical Curved Red PRESS Ribbon on Left -->
+      <div style="
+        width:17%;
+        min-width:48px;
+        background:linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #991b1b 100%);
+        border-radius:0 26px 26px 0;
+        border-right:3px solid #fbbf24;
+        box-shadow:3px 4px 14px rgba(220, 38, 38, 0.35);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        padding:12px 0;
+        margin-bottom:8px;
+      ">
+        <div style="
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:space-around;
+          height:88%;
+          color:#ffffff;
+          font-family:'Arial Black', Impact, sans-serif;
+          font-weight:900;
+          font-size:clamp(1.2rem, 6.5cqw, 2rem);
+          line-height:1.25;
+          letter-spacing:2px;
+          text-shadow:0 2px 4px rgba(0,0,0,0.4);
+        ">
+          <span>P</span>
+          <span>R</span>
+          <span>E</span>
+          <span>S</span>
+          <span>S</span>
         </div>
       </div>
 
-      <!-- Row 4: AREA -->
-      <div style="display:flex; align-items:center;">
-        <div style="background:linear-gradient(135deg, #b91c1c, #dc2626); color:#fff; font-weight:900; font-size:0.72rem; letter-spacing:0.6px; padding:5px 12px; clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%); border-radius:5px 0 0 5px; width:98px; flex-shrink:0; text-transform:uppercase;">
-          AREA
+      <!-- Right Main Column: Photo + 5 Details Rows -->
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:2px 0 2px 14px; box-sizing:border-box;">
+        <!-- Passport Photo Container with Red Frame -->
+        <div style="
+          width:52%;
+          aspect-ratio: 1 / 1.15;
+          max-height:170px;
+          border-radius:14px;
+          overflow:hidden;
+          border:3.5px solid #dc2626;
+          background:#2ca9ed;
+          box-shadow:0 6px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(251, 191, 36, 0.6);
+          margin-bottom:10px;
+          box-sizing:border-box;
+          position:relative;
+        ">
+          <img 
+            src="${photoUrl}" 
+            alt="${escapeHtml(fullName)}" 
+            style="width:100%; height:100%; object-fit:cover; display:block;"
+            onerror="this.onerror=null; this.src='${BASE_URL}/images/default_reporter_avatar.png';"
+          >
         </div>
-        <span style="color:#dc2626; font-weight:900; font-size:0.95rem; margin:0 4px;">:</span>
-        <div style="flex:1; background:#ffffff; border:1.5px solid #dc2626; border-radius:0 7px 7px 0; padding:4px 10px; font-weight:800; color:#0f172a; font-size:0.84rem; box-shadow:0 1px 3px rgba(220,38,38,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(areaDisplay)}">
-          ${escapeHtml(areaDisplay)}
-        </div>
-      </div>
 
-      <!-- Row 5: MOB.NO -->
-      <div style="display:flex; align-items:center;">
-        <div style="background:linear-gradient(135deg, #b91c1c, #dc2626); color:#fff; font-weight:900; font-size:0.72rem; letter-spacing:0.6px; padding:5px 12px; clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%); border-radius:5px 0 0 5px; width:98px; flex-shrink:0; text-transform:uppercase;">
-          MOB.NO
-        </div>
-        <span style="color:#dc2626; font-weight:900; font-size:0.95rem; margin:0 4px;">:</span>
-        <div style="flex:1; background:#ffffff; border:1.5px solid #dc2626; border-radius:0 7px 7px 0; padding:4px 10px; font-weight:800; color:#0f172a; font-size:0.86rem; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(220,38,38,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(mobileNo)}">
-          ${escapeHtml(mobileNo)}
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Wave Footer with Official Signatory -->
-    <div style="
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 22%;
-      background: linear-gradient(135deg, #991b1b 0%, #dc2626 55%, #881337 100%);
-      clip-path: polygon(0 28%, 100% 0%, 100% 100%, 0% 100%);
-      z-index: 4;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 0 16px 6px 16px;
-      box-sizing: border-box;
-    ">
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px; padding:0 8px;">
-        <!-- Left Hologram / Official Pass Emblem -->
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #facc15, #ca8a04); border:2px solid #ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:#0f172a; font-size:0.62rem; font-weight:900; text-align:center; line-height:1;">
-            ND30<br>PASS
+        <!-- 5 High-Definition Details Rows -->
+        <div style="width:100%; display:flex; flex-direction:column; gap:5px; margin-top:2px;">
+          <!-- Row 1: NAME -->
+          <div style="display:flex; align-items:center; height:27px; width:100%; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <div style="
+              width:35%;
+              min-width:88px;
+              height:100%;
+              background:linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+              color:#ffffff;
+              font-weight:900;
+              font-size:clamp(0.62rem, 3.0cqw, 0.8rem);
+              letter-spacing:0.8px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:6px 0 0 6px;
+              text-transform:uppercase;
+            ">NAME</div>
+            <div style="
+              flex:1;
+              height:100%;
+              background:#ffffff;
+              border:1.5px solid #dc2626;
+              border-left:none;
+              border-radius:0 6px 6px 0;
+              display:flex;
+              align-items:center;
+              padding:0 8px;
+              font-weight:800;
+              color:#0f172a;
+              font-size:clamp(0.72rem, 3.6cqw, 0.95rem);
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            " title="${escapeHtml(fullName)}">
+              <span style="color:#dc2626; margin-right:5px; font-weight:900;">:</span> ${escapeHtml(fullName)}
+            </div>
           </div>
-          <span style="font-size:0.6rem; color:#fef08a; font-weight:800; background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:4px; border:1px solid rgba(250,204,21,0.4); text-transform:uppercase; letter-spacing:0.5px;">
-            Dual Sided PVC Card
-          </span>
+
+          <!-- Row 2: DESIGNATION -->
+          <div style="display:flex; align-items:center; height:27px; width:100%; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <div style="
+              width:35%;
+              min-width:88px;
+              height:100%;
+              background:linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+              color:#ffffff;
+              font-weight:900;
+              font-size:clamp(0.58rem, 2.8cqw, 0.74rem);
+              letter-spacing:0.6px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:6px 0 0 6px;
+              text-transform:uppercase;
+            ">DESIGNATION</div>
+            <div style="
+              flex:1;
+              height:100%;
+              background:#ffffff;
+              border:1.5px solid #dc2626;
+              border-left:none;
+              border-radius:0 6px 6px 0;
+              display:flex;
+              align-items:center;
+              padding:0 8px;
+              font-weight:800;
+              color:#0f172a;
+              font-size:clamp(0.72rem, 3.6cqw, 0.95rem);
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            " title="${escapeHtml(designation)}">
+              <span style="color:#dc2626; margin-right:5px; font-weight:900;">:</span> ${escapeHtml(designation)}
+            </div>
+          </div>
+
+          <!-- Row 3: CODE -->
+          <div style="display:flex; align-items:center; height:27px; width:100%; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <div style="
+              width:35%;
+              min-width:88px;
+              height:100%;
+              background:linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+              color:#ffffff;
+              font-weight:900;
+              font-size:clamp(0.62rem, 3.0cqw, 0.8rem);
+              letter-spacing:0.8px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:6px 0 0 6px;
+              text-transform:uppercase;
+            ">CODE</div>
+            <div style="
+              flex:1;
+              height:100%;
+              background:#ffffff;
+              border:1.5px solid #dc2626;
+              border-left:none;
+              border-radius:0 6px 6px 0;
+              display:flex;
+              align-items:center;
+              padding:0 8px;
+              font-family:'Segoe UI', monospace;
+              font-weight:900;
+              color:#0f172a;
+              font-size:clamp(0.75rem, 3.8cqw, 1.02rem);
+              letter-spacing:0.8px;
+              white-space:nowrap;
+              overflow:hidden;
+            " title="${escapeHtml(displayCode)}">
+              <span style="color:#dc2626; margin-right:5px; font-weight:900;">:</span> ${escapeHtml(displayCode)}
+            </div>
+          </div>
+
+          <!-- Row 4: AREA -->
+          <div style="display:flex; align-items:center; height:27px; width:100%; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <div style="
+              width:35%;
+              min-width:88px;
+              height:100%;
+              background:linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+              color:#ffffff;
+              font-weight:900;
+              font-size:clamp(0.62rem, 3.0cqw, 0.8rem);
+              letter-spacing:0.8px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:6px 0 0 6px;
+              text-transform:uppercase;
+            ">AREA</div>
+            <div style="
+              flex:1;
+              height:100%;
+              background:#ffffff;
+              border:1.5px solid #dc2626;
+              border-left:none;
+              border-radius:0 6px 6px 0;
+              display:flex;
+              align-items:center;
+              padding:0 8px;
+              font-weight:800;
+              color:#0f172a;
+              font-size:clamp(0.68rem, 3.4cqw, 0.92rem);
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            " title="${escapeHtml(areaDisplay)}">
+              <span style="color:#dc2626; margin-right:5px; font-weight:900;">:</span> ${escapeHtml(areaDisplay)}
+            </div>
+          </div>
+
+          <!-- Row 5: MOB.NO -->
+          <div style="display:flex; align-items:center; height:27px; width:100%; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+            <div style="
+              width:35%;
+              min-width:88px;
+              height:100%;
+              background:linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+              color:#ffffff;
+              font-weight:900;
+              font-size:clamp(0.62rem, 3.0cqw, 0.8rem);
+              letter-spacing:0.8px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:6px 0 0 6px;
+              text-transform:uppercase;
+            ">MOB.NO</div>
+            <div style="
+              flex:1;
+              height:100%;
+              background:#ffffff;
+              border:1.5px solid #dc2626;
+              border-left:none;
+              border-radius:0 6px 6px 0;
+              display:flex;
+              align-items:center;
+              padding:0 8px;
+              font-weight:800;
+              color:#0f172a;
+              font-size:clamp(0.72rem, 3.6cqw, 0.95rem);
+              letter-spacing:0.5px;
+              white-space:nowrap;
+              overflow:hidden;
+            " title="${escapeHtml(mobileNo)}">
+              <span style="color:#dc2626; margin-right:5px; font-weight:900;">:</span> ${escapeHtml(mobileNo)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM WAVE & VERIFICATION ZONE -->
+    <div style="
+      position:relative;
+      z-index:2;
+      background:linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+      border-radius:28px 28px 0 0;
+      box-shadow:0 -4px 18px rgba(220, 38, 38, 0.25);
+      margin-top:4px;
+    ">
+      <!-- QR Code + Signatory Row -->
+      <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:10px 18px 8px 18px;
+      ">
+        <!-- Live Verification QR Code Box on Bottom Left -->
+        <div style="
+          background:#ffffff;
+          padding:4px;
+          border-radius:8px;
+          box-shadow:0 4px 12px rgba(0,0,0,0.3);
+          width:clamp(66px, 18cqw, 88px);
+          height:clamp(66px, 18cqw, 88px);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          flex-shrink:0;
+        ">
+          ${qrSrc ? `
+            <img 
+              src="${qrSrc}" 
+              alt="Scan the QR for Live Verification" 
+              style="width:100%; height:100%; object-fit:contain; display:block;"
+            >
+          ` : `
+            <div style="font-size:0.6rem; color:#dc2626; font-weight:800; text-align:center;">QR VERIFY</div>
+          `}
         </div>
 
-        <!-- Right Authentic Authorized Signature -->
-        <div style="text-align:right;">
-          <img src="${BASE_URL}/images/nd30_sign_transparent.png" alt="Signature" style="height:32px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35)); display:inline-block;">
-          <div style="color:#ffffff; font-weight:800; font-size:0.68rem; letter-spacing:0.4px;">Authorised Signatory</div>
-          <div style="color:#fecdd3; font-weight:700; font-size:0.6rem; letter-spacing:0.8px;">ND30 LIVE NETWORK</div>
+        <!-- Authorized Signatory on Bottom Right -->
+        <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:center;">
+          <img 
+            src="${BASE_URL}/images/nd30_sign_transparent.png" 
+            alt="Authorised Signatory" 
+            style="height:clamp(32px, 8cqw, 48px); max-width:140px; object-fit:contain; display:block; filter:brightness(0) invert(1);"
+            onerror="this.style.display='none';"
+          >
+          <div style="
+            color:#ffffff;
+            font-weight:800;
+            font-size:clamp(0.68rem, 3.2cqw, 0.88rem);
+            margin-top:2px;
+            letter-spacing:0.4px;
+            text-shadow:0 1px 3px rgba(0,0,0,0.5);
+          ">
+            Authorised Signatory
+          </div>
+          <div style="
+            color:#fef08a;
+            font-weight:900;
+            font-size:clamp(0.72rem, 3.4cqw, 0.95rem);
+            letter-spacing:1px;
+            text-shadow:0 1px 3px rgba(0,0,0,0.5);
+          ">
+            ND30 LIVE
+          </div>
         </div>
       </div>
 
-      <!-- Bottom Edge Banner -->
-      <div style="background:rgba(0,0,0,0.35); color:#fef08a; font-size:0.58rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; text-align:center; padding:3px 6px; border-radius:4px; border-top:1px solid rgba(255,255,255,0.15);">
-        SCAN REVERSE QR CODE FOR LIVE AUTHENTICATION
+      <!-- BOTTOM EDGE BANNER: "Scan the QR for Live Verification" -->
+      <div style="
+        background:#7f1d1d;
+        color:#fef08a;
+        font-weight:900;
+        font-size:clamp(0.62rem, 2.9cqw, 0.78rem);
+        text-align:center;
+        padding:5px 8px;
+        letter-spacing:0.8px;
+        text-transform:uppercase;
+        border-top:1px solid rgba(254, 240, 138, 0.3);
+      ">
+        ● Scan the QR for Live Verification ●
       </div>
     </div>
   </div>
@@ -353,9 +614,9 @@ function renderPressCardFrontHtml(app) {
 }
 
 /**
- * Render Official ND30 LIVE Press ID Card - BACK SIDE (Reverse Side)
- * Features live secured verification QR code, detailed personnel credentials,
- * administration/police authority notice, and newsroom jurisdiction details.
+ * Render Back Side HTML of the Official ND30 LIVE Press ID Card
+ * Includes official accreditation terms, instructions for police & civil authorities,
+ * verified residential address, validity dates, official security seal, and barcode.
  */
 function renderPressCardBackHtml(app, qrDataUrl, verifyUrl) {
   if (!app) return '';
@@ -363,164 +624,289 @@ function renderPressCardBackHtml(app, qrDataUrl, verifyUrl) {
   const displayCode = app.press_id_code 
     ? (app.press_id_code.includes('-') ? `ND30${String(app.id).padStart(3, '0')}` : app.press_id_code)
     : `ND30${String(app.id || 1).padStart(3, '0')}`;
-
-  const issueDateFormatted = app.press_id_issued_at 
-    ? new Date(app.press_id_issued_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
-    : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-
-  const expiryDateFormatted = app.press_id_expires_at 
-    ? new Date(app.press_id_expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
-    : '1 Year from Issue';
-
+  
   const designation = app.designation || app.join_as || 'Reporter';
   const fullName = app.full_name || 'Reporter';
+  const fatherName = app.father_name || 'N/A';
   const mobileNo = app.mobile_no || 'N/A';
   
-  let areaDisplay = 'Dhubri, Assam';
-  if (app.area) {
-    if (app.district && !app.area.toLowerCase().includes(app.district.toLowerCase())) {
-      areaDisplay = `${app.area}, ${app.district}`;
-    } else {
-      areaDisplay = `${app.area}, ${app.state || 'Assam'}`;
-    }
-  } else if (app.district) {
-    areaDisplay = `${app.district}, ${app.state || 'Assam'}`;
-  }
+  const issueDateFormatted = app.press_id_issued_at 
+    ? new Date(app.press_id_issued_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : 'Active';
 
-  const qrSrc = qrDataUrl || (app.press_id_qr ? (app.press_id_qr.startsWith('http') ? app.press_id_qr : `${BASE_URL}${app.press_id_qr}`) : '');
+  const expiryDateFormatted = app.press_id_expires_at 
+    ? new Date(app.press_id_expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '1 Year from Issue';
+
+  const fullAddress = `Vill/Town: ${app.village_town || 'N/A'}, PO: ${app.post_office || 'N/A'}, PS: ${app.police_station || 'N/A'}, Dist: ${app.district || 'Assam'}, State: ${app.state || 'Assam'} - PIN: ${app.pin_code || 'N/A'}`;
 
   return `
-  <div class="nd30-pvc-card nd30-pvc-card-back" style="
+  <div class="nd30-card-back" style="
     position: relative;
     width: 100%;
     aspect-ratio: 663 / 1024;
-    background: #ffffff;
     border-radius: 20px;
     overflow: hidden;
+    background: #ffffff;
     box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(220, 38, 38, 0.35);
-    user-select: none;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    user-select: none;
+    box-sizing: border-box;
   ">
-    <!-- Header Section: Directorate of Accreditation -->
-    <div style="background:linear-gradient(135deg, #090d16 0%, #1e293b 70%, #991b1b 100%); padding:14px 18px; border-bottom:3.5px solid #dc2626; color:#ffffff;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <img src="${BASE_URL}/images/nd30_live_logo.png" alt="ND30 LIVE" style="height:32px; object-fit:contain;">
+    <!-- Security Watermark Background Pattern -->
+    <div style="
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.04;
+      background-image: repeating-linear-gradient(
+        -35deg,
+        #000000 0,
+        #000000 1px,
+        transparent 1px,
+        transparent 28px
+      );
+      pointer-events: none;
+      z-index: 1;
+    "></div>
+
+    <!-- BACK HEADER -->
+    <div style="
+      position:relative;
+      z-index:2;
+      background:linear-gradient(135deg, #b91c1c 0%, #dc2626 50%, #991b1b 100%);
+      padding:10px 16px 8px 16px;
+      text-align:center;
+      color:#ffffff;
+      box-shadow:0 3px 10px rgba(0,0,0,0.18);
+    ">
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span style="font-family:'Arial Black', Impact, sans-serif; font-size:1.15rem; font-weight:900; letter-spacing:1px; color:#fef08a;">ND30 LIVE</span>
+        <span style="background:#ffffff; color:#dc2626; font-size:0.65rem; font-weight:900; padding:2px 8px; border-radius:12px; letter-spacing:0.8px;">PVC STANDARD</span>
+      </div>
+      <div style="font-size:0.82rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-top:2px;">
+        Official Press Accreditation Credential
+      </div>
+      <div style="font-size:0.68rem; color:#fecaca; margin-top:1px;">
+        Identity Verification & Legal Authority Terms
+      </div>
+    </div>
+
+    <!-- BACK CONTENT BODY -->
+    <div style="position:relative; z-index:2; padding:10px 14px 4px 14px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+      
+      <!-- Police & Administration Notice Box -->
+      <div style="
+        background:#f8fafc;
+        border:1.5px solid #dc2626;
+        border-radius:10px;
+        padding:8px 10px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.05);
+      ">
+        <div style="
+          color:#b91c1c;
+          font-weight:900;
+          font-size:clamp(0.68rem, 3.1cqw, 0.8rem);
+          text-transform:uppercase;
+          letter-spacing:0.5px;
+          display:flex;
+          align-items:center;
+          gap:5px;
+          margin-bottom:3px;
+        ">
+          <span>🏛️</span> Notice to Civil, Police & Emergency Authorities:
+        </div>
+        <p style="
+          margin:0;
+          font-size:clamp(0.62rem, 2.7cqw, 0.72rem);
+          line-height:1.45;
+          color:#334155;
+          font-weight:600;
+          text-align:justify;
+        ">
+          The accredited bearer is an authorized press correspondent of <strong>ND30 LIVE Network</strong>. Under the protection of constitutional freedom of the press, all civil administration, security forces, police departments, and emergency personnel are respectfully requested to extend customary professional courtesies and unhindered passage for lawful news gathering and public coverage.
+        </p>
+      </div>
+
+      <!-- Reporter Particulars Table -->
+      <div style="
+        background:#ffffff;
+        border:1px solid #e2e8f0;
+        border-radius:10px;
+        padding:8px 10px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.04);
+        margin:6px 0;
+      ">
+        <div style="font-size:0.75rem; font-weight:900; color:#0f172a; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #f1f5f9; padding-bottom:4px; display:flex; justify-content:space-between;">
+          <span>📋 Holder Record</span>
+          <span style="color:#dc2626; font-family:monospace;">${escapeHtml(displayCode)}</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px 10px; font-size:clamp(0.62rem, 2.7cqw, 0.74rem); line-height:1.4;">
           <div>
-            <div style="font-size:0.72rem; color:#facc15; font-weight:900; letter-spacing:0.8px; text-transform:uppercase;">
-              PRESS ACCREDITATION PASS
-            </div>
-            <div style="font-size:0.6rem; color:#94a3b8; font-weight:700; letter-spacing:0.4px;">
-              DIRECTORATE OF NEWS & FIELD COVERAGE
-            </div>
+            <span style="color:#64748b; font-weight:700; display:block;">Full Name:</span>
+            <strong style="color:#0f172a;">${escapeHtml(fullName)}</strong>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:700; display:block;">Father's Name:</span>
+            <span style="color:#0f172a; font-weight:600;">${escapeHtml(fatherName)}</span>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:700; display:block;">Designation:</span>
+            <span style="color:#dc2626; font-weight:800;">${escapeHtml(designation)}</span>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:700; display:block;">Contact:</span>
+            <span style="color:#0f172a; font-weight:700;">${escapeHtml(mobileNo)}</span>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:700; display:block;">Date of Issue:</span>
+            <span style="color:#0f172a; font-weight:600;">${issueDateFormatted}</span>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:700; display:block;">Valid Until:</span>
+            <strong style="color:#16a34a;">${expiryDateFormatted}</strong>
+          </div>
+          <div style="grid-column: 1 / -1; margin-top:3px; padding-top:4px; border-top:1px dashed #e2e8f0;">
+            <span style="color:#64748b; font-weight:700; display:block;">Permanent Residential Address:</span>
+            <span style="color:#1e293b; font-weight:600; line-height:1.35;">${escapeHtml(fullAddress)}</span>
           </div>
         </div>
-        <span style="background:#dc2626; color:#ffffff; font-size:0.68rem; font-weight:900; padding:3px 10px; border-radius:4px; letter-spacing:0.6px; text-transform:uppercase;">
-          REVERSE
-        </span>
+      </div>
+
+      <!-- Security Seal & Barcode Strip -->
+      <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:10px;
+        padding:6px 10px;
+        gap:10px;
+      ">
+        <!-- Security Barcode Representation -->
+        <div style="flex:1; display:flex; flex-direction:column; align-items:flex-start;">
+          <div style="
+            display:flex;
+            gap:2px;
+            align-items:center;
+            height:28px;
+            width:100%;
+            overflow:hidden;
+          ">
+            ${Array.from({ length: 42 }).map((_, i) => `
+              <div style="
+                flex: ${(i % 3 === 0 ? 3 : (i % 2 === 0 ? 1 : 2))};
+                height: 100%;
+                background: #0f172a;
+              "></div>
+            `).join('')}
+          </div>
+          <div style="font-family:monospace; font-size:0.68rem; font-weight:900; color:#334155; margin-top:2px; letter-spacing:1px;">
+            *${escapeHtml(displayCode)}*
+          </div>
+        </div>
+
+        <!-- Official Circular Golden/Red Stamp -->
+        <div style="
+          width:56px;
+          height:56px;
+          border-radius:50%;
+          border:2px dashed #b91c1c;
+          padding:2px;
+          box-sizing:border-box;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:#fff;
+          box-shadow:0 2px 6px rgba(185, 28, 28, 0.15);
+          flex-shrink:0;
+        ">
+          <div style="
+            width:100%;
+            height:100%;
+            border-radius:50%;
+            background:linear-gradient(135deg, #fef2f2, #fee2e2);
+            border:1px solid #dc2626;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding:2px;
+            box-sizing:border-box;
+          ">
+            <span style="font-size:0.5rem; font-weight:900; color:#b91c1c; line-height:1;">ND30 LIVE</span>
+            <span style="font-size:0.65rem; color:#dc2626;">★</span>
+            <span style="font-size:0.42rem; font-weight:800; color:#0f172a; text-transform:uppercase; line-height:1;">VERIFIED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legal Disclaimer & Instructions -->
+      <div style="
+        font-size:clamp(0.55rem, 2.4cqw, 0.65rem);
+        line-height:1.4;
+        color:#64748b;
+        text-align:center;
+        margin:4px 0 2px 0;
+      ">
+        This card is non-transferable and remains the exclusive property of <strong>ND30 LIVE</strong>. If lost or found, please return to: <em>ND30 LIVE Newsroom Desk, Guwahati, Assam</em>. Emergency Desk: <strong>${OFFICIAL_EMAIL}</strong>
       </div>
     </div>
 
-    <!-- Center Body Section -->
-    <div style="padding:14px 18px; display:flex; flex-direction:column; gap:12px; flex:1;">
-      <!-- QR Code & Security Unit -->
-      <div style="display:flex; align-items:center; gap:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px;">
-        <div style="background:#ffffff; border:2.5px solid #dc2626; border-radius:10px; padding:5px; box-shadow:0 4px 12px rgba(220,38,38,0.18); width:94px; height:94px; flex-shrink:0;">
-          <img src="${qrSrc}" alt="Secured QR Code" style="width:100%; height:100%; object-fit:contain; display:block;">
-        </div>
-        <div>
-          <div style="font-size:0.78rem; font-weight:900; color:#15803d; display:flex; align-items:center; gap:5px;">
-            <span>🔒</span> SECURED DIGITAL QR CODE
-          </div>
-          <div style="font-size:0.65rem; color:#64748b; line-height:1.35; margin:4px 0 6px 0;">
-            Scan with smartphone camera to view live accreditation status, validity period, and authorized police verification sheet online.
-          </div>
-          <div style="display:inline-block; font-size:0.82rem; font-weight:900; font-family:'Segoe UI', monospace; color:#dc2626; background:rgba(220,38,38,0.08); border:1px dashed #dc2626; padding:2px 8px; border-radius:4px;">
-            ID: ${displayCode}
-          </div>
-        </div>
-      </div>
-
-      <!-- Personnel Accreditation Grid -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px;">
-          <span style="font-size:0.62rem; color:#64748b; font-weight:800; text-transform:uppercase; display:block;">Father's Name</span>
-          <strong style="color:#0f172a; font-size:0.78rem; font-weight:800;">${escapeHtml(app.father_name || 'Record on File')}</strong>
-        </div>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px;">
-          <span style="font-size:0.62rem; color:#64748b; font-weight:800; text-transform:uppercase; display:block;">Accredited Role</span>
-          <strong style="color:#b91c1c; font-size:0.78rem; font-weight:800;">${escapeHtml(designation)}</strong>
-        </div>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px;">
-          <span style="font-size:0.62rem; color:#64748b; font-weight:800; text-transform:uppercase; display:block;">Date of Issue</span>
-          <span style="color:#0f172a; font-size:0.78rem; font-weight:700;">${issueDateFormatted}</span>
-        </div>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px;">
-          <span style="font-size:0.62rem; color:#64748b; font-weight:800; text-transform:uppercase; display:block;">Validity Period</span>
-          <strong style="color:#15803d; font-size:0.78rem; font-weight:800;">Until ${expiryDateFormatted}</strong>
-        </div>
-      </div>
-
-      <!-- Residential Address on File -->
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px;">
-        <span style="font-size:0.62rem; color:#64748b; font-weight:800; text-transform:uppercase; display:block; margin-bottom:2px;">Residential Address on Record</span>
-        <div style="color:#1e293b; font-size:0.72rem; line-height:1.4; font-weight:600;">
-          ${escapeHtml(app.village_town || 'N/A')}, PO: ${escapeHtml(app.post_office || 'N/A')}, PS: ${escapeHtml(app.police_station || 'N/A')}, Dist: ${escapeHtml(app.district)}, ${escapeHtml(app.state || 'Assam')} - PIN: ${escapeHtml(app.pin_code || 'N/A')}
-        </div>
-      </div>
-
-      <!-- Legal Notice & Authority Privileges -->
-      <div style="background:rgba(220,38,38,0.05); border-left:3.5px solid #dc2626; border-radius:0 8px 8px 0; padding:8px 12px; font-size:0.65rem; color:#334155; line-height:1.45;">
-        <strong style="color:#b91c1c; font-size:0.68rem; display:block; margin-bottom:2px;">NOTICE FOR POLICE, PARAMILITARY & CIVIL AUTHORITIES:</strong>
-        This Press Card is the official property of ND30 LIVE Network. The bearer is an accredited media correspondent authorized for field coverage. Civil, Police, and Security Authorities are respectfully requested to extend all customary cooperation and unhindered passage in the performance of duty.
-      </div>
-    </div>
-
-    <!-- Back Footer: Central Newsroom Desk & Barcode Strip -->
-    <div>
-      <div style="background:#0f172a; color:#cbd5e1; padding:8px 18px; display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; border-top:1px solid #1e293b;">
-        <div><strong>Editorial Desk:</strong> <span style="color:#38bdf8;">nd30team@gmail.com</span></div>
-        <div><strong>Bureau:</strong> Guwahati, Assam</div>
-      </div>
-      <div style="background:#000000; color:#94a3b8; font-family:monospace; font-size:0.62rem; letter-spacing:2.5px; text-align:center; padding:3px 0; user-select:none;">
-        ||||||| | ||||| |||||| | |||||||| |||| | ||||||| |||||||
-      </div>
+    <!-- BACK FOOTER STRIP -->
+    <div style="
+      position:relative;
+      z-index:2;
+      background:#0f172a;
+      color:#e2e8f0;
+      font-weight:700;
+      font-size:clamp(0.6rem, 2.8cqw, 0.74rem);
+      text-align:center;
+      padding:6px 10px;
+      letter-spacing:0.5px;
+      border-top:2px solid #dc2626;
+    ">
+      ND30 LIVE DIGITAL NETWORK • GUWAHATI, ASSAM • WWW.ND30LIVE.IN
     </div>
   </div>
   `;
 }
 
 /**
- * Render Complete Press Card Component (Supports Interactive 3D Flip, Side-by-Side, Front & Back)
+ * Render Complete ND30 LIVE Dual-Sided Press ID Card Component
+ * Supports interactive 3D Flip, side-by-side view, or standalone front/back rendering.
  */
 function renderPressCardHtml(app, qrDataUrl, verifyUrl, mode = 'flip') {
   if (!app) return '';
 
-  const frontHtml = renderPressCardFrontHtml(app);
+  const frontHtml = renderPressCardFrontHtml(app, qrDataUrl, verifyUrl);
   const backHtml = renderPressCardBackHtml(app, qrDataUrl, verifyUrl);
 
-  if (mode === 'front') return frontHtml;
-  if (mode === 'back') return backHtml;
+  if (mode === 'front') {
+    return `<div class="nd30-id-card-wrapper" style="width:100%; max-width:440px; margin:0 auto; container-type:inline-size;">${frontHtml}</div>`;
+  }
+
+  if (mode === 'back') {
+    return `<div class="nd30-id-card-wrapper" style="width:100%; max-width:440px; margin:0 auto; container-type:inline-size;">${backHtml}</div>`;
+  }
 
   if (mode === 'side-by-side') {
     return `
-    <div class="nd30-dual-cards-row" style="display:flex; justify-content:center; gap:24px; flex-wrap:wrap; max-width:880px; margin:0 auto;">
-      <div style="flex:1; min-width:300px; max-width:390px;">
-        <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-          FRONT SIDE (PVC STANDARD)
+    <div class="nd30-id-cards-dual" style="display:flex; flex-wrap:wrap; justify-content:center; gap:24px; width:100%; max-width:920px; margin:0 auto;">
+      <div style="flex:1; min-width:320px; max-width:440px; container-type:inline-size;">
+        <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:8px;">
+          🪪 Front Side
         </div>
         ${frontHtml}
       </div>
-      <div style="flex:1; min-width:300px; max-width:390px;">
-        <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center;">
-          BACK SIDE (ACCREDITATION & QR)
+      <div style="flex:1; min-width:320px; max-width:440px; container-type:inline-size;">
+        <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:8px;">
+          🔄 Back Side
         </div>
         ${backHtml}
       </div>
@@ -530,41 +916,28 @@ function renderPressCardHtml(app, qrDataUrl, verifyUrl, mode = 'flip') {
 
   // Default: Interactive 3D Flip Card
   return `
-  <div class="nd30-flip-card-wrapper" style="max-width:390px; margin:0 auto; perspective:1200px;">
-    <!-- Flip Trigger Helper -->
-    <div style="text-align:center; margin-bottom:10px;">
-      <button type="button" onclick="toggleCard3DFlip()" class="btn-flip-hint" style="background:rgba(220,38,38,0.12); border:1px solid #dc2626; color:#ef4444; font-size:0.75rem; font-weight:800; padding:5px 14px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-        <span>🔄</span> Click to Flip Card (Front / Back)
-      </button>
-    </div>
-
-    <!-- 3D Card Container -->
-    <div class="nd30-flip-card-stage" id="nd30FlipCardStage" onclick="toggleCard3DFlip()" style="
+  <div class="nd30-interactive-flip-card-wrapper" style="width:100%; max-width:440px; margin:0 auto; perspective:1200px; container-type:inline-size;">
+    <div id="nd30CardFlipper" class="nd30-card-flipper" style="
       position: relative;
       width: 100%;
-      aspect-ratio: 663 / 1024;
-      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
       cursor: pointer;
-    ">
-      <!-- FRONT FACE -->
-      <div class="nd30-card-face nd30-face-front" style="
-        position: absolute;
-        inset: 0;
+    " onclick="toggleCardFlip()" title="Click to Flip Card">
+      
+      <!-- Front Face -->
+      <div class="nd30-card-face-front" style="
         width: 100%;
-        height: 100%;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
       ">
         ${frontHtml}
       </div>
 
-      <!-- BACK FACE -->
-      <div class="nd30-card-face nd30-face-back" style="
+      <!-- Back Face -->
+      <div class="nd30-card-face-back" style="
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0; width: 100%; height: 100%;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
         transform: rotateY(180deg);
@@ -572,16 +945,38 @@ function renderPressCardHtml(app, qrDataUrl, verifyUrl, mode = 'flip') {
         ${backHtml}
       </div>
     </div>
+
+    <!-- Flip Control Helper Hint -->
+    <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:14px;">
+      <button type="button" onclick="toggleCardFlip()" class="btn-flip-trigger" style="
+        background:rgba(220, 38, 38, 0.15);
+        border:1px solid #dc2626;
+        color:#f87171;
+        font-weight:700;
+        font-size:0.82rem;
+        padding:6px 16px;
+        border-radius:20px;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        transition:all 0.2s ease;
+      ">
+        <span id="flipIcon">🔄</span> <span id="flipLabel">Click Card to Flip (3D View)</span>
+      </button>
+    </div>
   </div>
 
   <script>
-    function toggleCard3DFlip() {
-      const stage = document.getElementById('nd30FlipCardStage');
-      if (!stage) return;
-      if (stage.style.transform === 'rotateY(180deg)') {
-        stage.style.transform = 'rotateY(0deg)';
-      } else {
-        stage.style.transform = 'rotateY(180deg)';
+    let isFlipped = false;
+    function toggleCardFlip() {
+      const flipper = document.getElementById('nd30CardFlipper');
+      const label = document.getElementById('flipLabel');
+      if (!flipper) return;
+      isFlipped = !isFlipped;
+      flipper.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+      if (label) {
+        label.innerText = isFlipped ? 'Showing Back Side (Click to Flip)' : 'Showing Front Side (Click to Flip)';
       }
     }
   </script>
@@ -631,10 +1026,10 @@ async function approveReporterApplication(applicationId) {
 
   // Dispatch Email to Applicant
   const transporter = getEmailTransporter();
-  const cardHtml = renderPressCardHtml(app, qrResult.dataUrl, qrResult.verifyUrl);
+  const cardHtml = renderPressCardHtml(app, qrResult.dataUrl, qrResult.verifyUrl, 'side-by-side');
 
   const emailHtml = `
-  <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width:680px; margin:0 auto; background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:12px; overflow:hidden;">
+  <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width:720px; margin:0 auto; background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:12px; overflow:hidden;">
     <div style="background:linear-gradient(135deg, #15803d, #16a34a); padding:26px 28px; text-align:center;">
       <img src="${BASE_URL}/images/nd30_live_logo.png" alt="ND30 LIVE" style="height:54px; max-width:180px; object-fit:contain; margin-bottom:8px; display:inline-block;"><br>
       <p style="margin:6px 0 0 0; color:#dcfce7; font-size:1rem; font-weight:600;">
@@ -647,7 +1042,7 @@ async function approveReporterApplication(applicationId) {
         Dear <strong>${escapeHtml(app.full_name)}</strong>,
       </p>
       <p style="font-size:0.95rem; line-height:1.6; color:#c9d1d9;">
-        We are thrilled to inform you that after reviewing your credentials, the Editorial Board of <strong>ND30 LIVE</strong> has officially approved your appointment as an accredited <strong>${escapeHtml(designation)}</strong> for <strong>${escapeHtml(app.area ? `${app.area}, ${app.district}` : app.district)}, ${escapeHtml(app.state)}</strong>!
+        We are thrilled to inform you that after reviewing your credentials, the Editorial Board of <strong>ND30 LIVE</strong> has officially approved your appointment as an accredited <strong>${escapeHtml(designation)}</strong> for <strong>${escapeHtml(app.area ? `${app.area}, ${app.district}` : app.district)}, ${escapeHtml(app.state || 'Assam')}</strong>!
       </p>
 
       <div style="background:rgba(34, 197, 94, 0.1); border-left:4px solid #22c55e; padding:14px 18px; border-radius:0 8px 8px 0; margin:22px 0;">
@@ -656,11 +1051,11 @@ async function approveReporterApplication(applicationId) {
           Press ID: <code style="color:#facc15;">${escapeHtml(pressIdCode)}</code>
         </div>
         <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px;">
-          Your digital Press ID Card is rendered below with a <strong>Secured QR Code</strong> for on-ground verification by authorities and the public.
+          Your dual-sided Digital Press ID Card is rendered below with a <strong>Secured QR Code</strong> for live on-ground verification.
         </div>
       </div>
 
-      <!-- Rendered Digital Press ID Card -->
+      <!-- Rendered Digital Press ID Card (Dual Sided) -->
       <div style="margin:28px 0;">
         ${cardHtml}
       </div>
@@ -719,9 +1114,7 @@ async function approveReporterApplication(applicationId) {
 }
 
 /**
- * Handle Application Rejection:
- * 1. Update status to 'rejected'
- * 2. Dispatch polite notification email to applicant
+ * Handle Application Rejection
  */
 async function rejectReporterApplication(applicationId, reason = '') {
   let app = db.prepare('SELECT * FROM reporter_applications WHERE id = ?').get(applicationId);
@@ -824,11 +1217,6 @@ function generatePressCardPng(app) {
     const filename = `idcard_${displayCode.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
     const outputPath = path.join(uploadDir, filename);
 
-    // If cached image already exists, return immediately
-    if (fs.existsSync(outputPath)) {
-      return resolve(outputPath);
-    }
-
     if (process.platform !== 'win32') {
       return resolve(null);
     }
@@ -847,7 +1235,6 @@ function generatePressCardPng(app) {
       areaDisplay = `${app.district}, ${app.state || 'Assam'}`;
     }
 
-    const templatePath = path.join(__dirname, '..', 'public', 'images', 'nd30_id_card_template.png');
     const avatarPath = path.join(__dirname, '..', 'public', 'images', 'default_reporter_avatar.png');
     let photoPath = '';
     if (app.photo_file && !app.photo_file.startsWith('http')) {
@@ -857,95 +1244,229 @@ function generatePressCardPng(app) {
     if (app.press_id_qr && !app.press_id_qr.startsWith('http')) {
       qrPath = path.join(__dirname, '..', 'public', app.press_id_qr);
     }
+    const signPath = path.join(__dirname, '..', 'public', 'images', 'nd30_sign_transparent.png');
 
     const psScript = `
       [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null
-      $template = [System.Drawing.Bitmap]::FromFile('${templatePath.replace(/'/g, "''")}')
-      $bmp = New-Object System.Drawing.Bitmap($template.Width, $template.Height)
+      $W = 663
+      $H = 1024
+      $bmp = New-Object System.Drawing.Bitmap($W, $H)
       $g = [System.Drawing.Graphics]::FromImage($bmp)
       $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
       $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
       $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-      $g.DrawImage($template, 0, 0, $template.Width, $template.Height)
-      $template.Dispose()
 
-      $photoRect = New-Object System.Drawing.Rectangle(204, 248, 288, 312)
-      $radius = 14
-      $diameter = $radius * 2
-      $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-      $arc = New-Object System.Drawing.Rectangle($photoRect.X, $photoRect.Y, $diameter, $diameter)
-      $path.AddArc($arc, 180, 90)
-      $arc.X = $photoRect.Right - $diameter
-      $path.AddArc($arc, 270, 90)
-      $arc.Y = $photoRect.Bottom - $diameter
-      $path.AddArc($arc, 0, 90)
-      $arc.X = $photoRect.Left
-      $path.AddArc($arc, 90, 90)
-      $path.CloseFigure()
+      # Clean White Background
+      $whiteBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+      $g.FillRectangle($whiteBrush, 0, 0, $W, $H)
+      $whiteBrush.Dispose()
+
+      # Top Wave
+      $redGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.Point(0, 0)),
+        (New-Object System.Drawing.Point($W, 160)),
+        [System.Drawing.Color]::FromArgb(239, 68, 68),
+        [System.Drawing.Color]::FromArgb(185, 28, 28)
+      )
+      $topPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+      $topPath.AddBezier(200, 0, 340, 0, 480, 40, 560, 90)
+      $topPath.AddBezier(560, 90, 610, 120, 640, 150, $W, 170)
+      $topPath.AddLine($W, 170, $W, 0)
+      $topPath.AddLine($W, 0, 200, 0)
+      $topPath.CloseFigure()
+      $g.FillPath($redGrad, $topPath)
+      $topPath.Dispose()
+      $redGrad.Dispose()
+
+      # Logo Text: ND30 LIVE
+      $fontLogo = New-Object System.Drawing.Font('Arial Black', 38, [System.Drawing.FontStyle]::Bold)
+      $brushRed = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220, 38, 38))
+      $g.DrawString('ND30', $fontLogo, $brushRed, 180, 35)
+      $fontLogo.Dispose()
+      $brushRed.Dispose()
+
+      $pillBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220, 38, 38))
+      $g.FillEllipse($pillBrush, 360, 48, 120, 46)
+      $pillBrush.Dispose()
+
+      $fontLive = New-Object System.Drawing.Font('Arial Black', 18, [System.Drawing.FontStyle]::Bold)
+      $brushWhite = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+      $g.DrawString('LIVE', $fontLive, $brushWhite, 390, 56)
+      $fontLive.Dispose()
+
+      # Blue Slogan Ribbon
+      $blueGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.Point(40, 114)),
+        (New-Object System.Drawing.Point($W - 40, 114)),
+        [System.Drawing.Color]::FromArgb(30, 58, 138),
+        [System.Drawing.Color]::FromArgb(37, 99, 235)
+      )
+      $g.FillRectangle($blueGrad, 40, 114, $W - 80, 34)
+      $blueGrad.Dispose()
+
+      $fontRibbon = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
+      $sf = New-Object System.Drawing.StringFormat
+      $sf.Alignment = [System.Drawing.StringAlignment]::Center
+      $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
+      $g.DrawString('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', $fontRibbon, $brushWhite, [float]($W / 2), 131, $sf)
+      $fontRibbon.Dispose()
+
+      # Left PRESS Ribbon
+      $pressGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.Point(0, 176)),
+        (New-Object System.Drawing.Point(0, 736)),
+        [System.Drawing.Color]::FromArgb(239, 68, 68),
+        [System.Drawing.Color]::FromArgb(153, 27, 27)
+      )
+      $pressPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+      $pressPath.AddLine(0, 176, 70, 176)
+      $pressPath.AddBezier(70, 176, 100, 226, 100, 296, 100, 296)
+      $pressPath.AddLine(100, 296, 100, 676)
+      $pressPath.AddBezier(100, 676, 100, 736, 70, 736, 70, 736)
+      $pressPath.AddLine(70, 736, 0, 736)
+      $pressPath.CloseFigure()
+      $g.FillPath($pressGrad, $pressPath)
+
+      $goldPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(251, 191, 36), 4)
+      $g.DrawPath($goldPen, $pressPath)
+      $goldPen.Dispose()
+      $pressPath.Dispose()
+      $pressGrad.Dispose()
+
+      # Letters P R E S S
+      $fontPress = New-Object System.Drawing.Font('Arial Black', 28, [System.Drawing.FontStyle]::Bold)
+      $pressLetters = @('P', 'R', 'E', 'S', 'S')
+      for ($i = 0; $i -lt 5; $i++) {
+        $g.DrawString($pressLetters[$i], $fontPress, $brushWhite, 48, 235 + $i * 95, $sf)
+      }
+      $fontPress.Dispose()
+
+      # Photo Frame
+      $px = 240
+      $py = 186
+      $pw = 280
+      $ph = 310
+      $photoRect = New-Object System.Drawing.Rectangle($px, $py, $pw, $ph)
+      $bgPhoto = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(44, 169, 237))
+      $g.FillRectangle($bgPhoto, $photoRect)
+      $bgPhoto.Dispose()
 
       $hasPhoto = $false
       $pPath = '${photoPath.replace(/'/g, "''")}'
       if ($pPath -and [System.IO.File]::Exists($pPath)) {
         try {
           $photo = [System.Drawing.Bitmap]::FromFile($pPath)
-          $g.SetClip($path)
-          $srcRatio = $photo.Width / $photo.Height
-          $dstRatio = $photoRect.Width / $photoRect.Height
-          $srcCrop = New-Object System.Drawing.Rectangle(0, 0, $photo.Width, $photo.Height)
-          if ($srcRatio -gt $dstRatio) {
-            $cropW = [int]($photo.Height * $dstRatio)
-            $srcCrop.X = [int](($photo.Width - $cropW) / 2)
-            $srcCrop.Width = $cropW
-          } else {
-            $cropH = [int]($photo.Width / $dstRatio)
-            $srcCrop.Y = [int](($photo.Height - $cropH) / 2)
-            $srcCrop.Height = $cropH
-          }
-          $g.DrawImage($photo, $photoRect, $srcCrop, [System.Drawing.GraphicsUnit]::Pixel)
-          $g.ResetClip()
+          $g.DrawImage($photo, $photoRect)
           $photo.Dispose()
           $hasPhoto = $true
         } catch {}
       }
-
       if (-not $hasPhoto) {
         $avPath = '${avatarPath.replace(/'/g, "''")}'
         if ([System.IO.File]::Exists($avPath)) {
           $avatar = [System.Drawing.Bitmap]::FromFile($avPath)
-          $g.SetClip($path)
           $g.DrawImage($avatar, $photoRect)
-          $g.ResetClip()
           $avatar.Dispose()
         }
       }
 
-      $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(220, 38, 38), 4)
-      $g.DrawPath($pen, $path)
-      $pen.Dispose()
-      $path.Dispose()
+      $redPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(220, 38, 38), 6)
+      $g.DrawRectangle($redPen, $photoRect)
+      $redPen.Dispose()
 
-      $font = New-Object System.Drawing.Font('Segoe UI', 18, [System.Drawing.FontStyle]::Bold)
-      $fontMono = New-Object System.Drawing.Font('Consolas', 19, [System.Drawing.FontStyle]::Bold)
-      $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(15, 23, 42))
+      # 5 Details Rows
+      $fontLabel = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold)
+      $fontVal = New-Object System.Drawing.Font('Segoe UI', 14, [System.Drawing.FontStyle]::Bold)
+      $fontMono = New-Object System.Drawing.Font('Consolas', 15, [System.Drawing.FontStyle]::Bold)
+      $brushDark = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(15, 23, 42))
+      $redTagBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220, 38, 38))
+      $redBorderPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(220, 38, 38), 2)
 
-      $g.DrawString('${fullName.replace(/'/g, "''")}', $font, $brush, 354, 579)
-      $g.DrawString('${designation.replace(/'/g, "''")}', $font, $brush, 354, 625)
-      $g.DrawString('${displayCode.replace(/'/g, "''")}', $fontMono, $brush, 354, 671)
-      $g.DrawString('${areaDisplay.replace(/'/g, "''")}', $font, $brush, 354, 717)
-      $g.DrawString('${mobileNo.replace(/'/g, "''")}', $font, $brush, 354, 763)
+      $labels = @('NAME', 'DESIGNATION', 'CODE', 'AREA', 'MOB.NO')
+      $vals = @(
+        '${fullName.replace(/'/g, "''")}',
+        '${designation.replace(/'/g, "''")}',
+        '${displayCode.replace(/'/g, "''")}',
+        '${areaDisplay.replace(/'/g, "''")}',
+        '${mobileNo.replace(/'/g, "''")}'
+      )
 
-      $font.Dispose()
+      for ($i = 0; $i -lt 5; $i++) {
+        $ry = 525 + $i * 53
+        # Red tag
+        $g.FillRectangle($redTagBrush, 135, $ry, 165, 44)
+        $g.DrawString($labels[$i], $fontLabel, $brushWhite, 217, $ry + 22, $sf)
+
+        # White box
+        $g.DrawRectangle($redBorderPen, 300, $ry, 320, 44)
+        $f = if ($i -eq 2) { $fontMono } else { $fontVal }
+        $g.DrawString(': ' + $vals[$i], $f, $brushDark, 310, $ry + 10)
+      }
+
+      $fontLabel.Dispose()
+      $fontVal.Dispose()
       $fontMono.Dispose()
-      $brush.Dispose()
+      $brushDark.Dispose()
+      $redTagBrush.Dispose()
+      $redBorderPen.Dispose()
 
+      # Bottom Wave
+      $waveGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.Point(0, 820)),
+        (New-Object System.Drawing.Point($W, $H)),
+        [System.Drawing.Color]::FromArgb(220, 38, 38),
+        [System.Drawing.Color]::FromArgb(153, 27, 27)
+      )
+      $wavePath = New-Object System.Drawing.Drawing2D.GraphicsPath
+      $wavePath.AddBezier(0, 850, [float]($W / 2), 800, [float]($W / 2), 800, $W, 845)
+      $wavePath.AddLine($W, 845, $W, $H)
+      $wavePath.AddLine($W, $H, 0, $H)
+      $wavePath.CloseFigure()
+      $g.FillPath($waveGrad, $wavePath)
+      $wavePath.Dispose()
+      $waveGrad.Dispose()
+
+      # QR Code Box
+      $g.FillRectangle($brushWhite, 35, 852, 118, 118)
       $qPath = '${qrPath.replace(/'/g, "''")}'
       if ($qPath -and [System.IO.File]::Exists($qPath)) {
         try {
           $qr = [System.Drawing.Bitmap]::FromFile($qPath)
-          $g.DrawImage($qr, 38, 852, 116, 116)
+          $g.DrawImage($qr, 41, 858, 106, 106)
           $qr.Dispose()
         } catch {}
       }
+
+      # Signature on Right
+      $sSignPath = '${signPath.replace(/'/g, "''")}'
+      if ([System.IO.File]::Exists($sSignPath)) {
+        try {
+          $sign = [System.Drawing.Bitmap]::FromFile($sSignPath)
+          $g.DrawImage($sign, $W - 245, 856, 180, 55)
+          $sign.Dispose()
+        } catch {}
+      }
+
+      $fontSig = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold)
+      $g.DrawString('Authorised Signatory', $fontSig, $brushWhite, $W - 150, 924, $sf)
+      $fontSig.Dispose()
+
+      $fontND = New-Object System.Drawing.Font('Arial Black', 15, [System.Drawing.FontStyle]::Bold)
+      $yellowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(254, 240, 138))
+      $g.DrawString('ND30 LIVE', $fontND, $yellowBrush, $W - 150, 948, $sf)
+      $fontND.Dispose()
+
+      # Very Bottom Strip: "Scan the QR for Live Verification"
+      $darkRedBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(127, 29, 29))
+      $g.FillRectangle($darkRedBrush, 0, $H - 36, $W, 36)
+      $darkRedBrush.Dispose()
+
+      $fontFoot = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
+      $g.DrawString('● SCAN THE QR FOR LIVE VERIFICATION ●', $fontFoot, $yellowBrush, [float]($W / 2), $H - 18, $sf)
+      $fontFoot.Dispose()
+      $yellowBrush.Dispose()
+      $brushWhite.Dispose()
+      $sf.Dispose()
 
       $g.Dispose()
       $bmp.Save('${outputPath.replace(/'/g, "''")}', [System.Drawing.Imaging.ImageFormat]::Png)
@@ -978,9 +1499,8 @@ module.exports = {
   renderPressCardHtml,
   renderPressCardFrontHtml,
   renderPressCardBackHtml,
-  generatePressCardPng,
   approveReporterApplication,
   rejectReporterApplication,
-  getReporterByPressId
+  getReporterByPressId,
+  generatePressCardPng
 };
-
