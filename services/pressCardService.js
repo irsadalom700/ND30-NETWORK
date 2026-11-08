@@ -156,11 +156,11 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
     "></div>
 
     <!-- Top Header Corner Curve Swoosh -->
-    <svg style="position:absolute; top:0; right:0; width:100%; height:110px; z-index:1; pointer-events:none;" viewBox="0 0 663 170" fill="none" preserveAspectRatio="none">
-      <path d="M663 0H200C320 0 450 30 520 80C590 130 630 170 663 170V0Z" fill="url(#topWaveGrad)" />
-      <path d="M663 0H350C440 0 530 25 580 65C630 105 650 140 663 150V0Z" fill="#dc2626" fill-opacity="0.25" />
+    <svg style="position:absolute; top:0; right:0; width:100%; height:95px; z-index:1; pointer-events:none;" viewBox="0 0 663 150" fill="none" preserveAspectRatio="none">
+      <path d="M663 0H320C420 0 520 25 580 65C625 95 645 125 663 150V0Z" fill="url(#topWaveGrad)" />
+      <path d="M663 0H420C490 0 560 20 600 50C635 80 650 110 663 130V0Z" fill="#dc2626" fill-opacity="0.25" />
       <defs>
-        <linearGradient id="topWaveGrad" x1="200" y1="0" x2="663" y2="170" gradientUnits="userSpaceOnUse">
+        <linearGradient id="topWaveGrad" x1="320" y1="0" x2="663" y2="150" gradientUnits="userSpaceOnUse">
           <stop stop-color="#ef4444"/>
           <stop offset="1" stop-color="#b91c1c"/>
         </linearGradient>
@@ -168,57 +168,57 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
     </svg>
 
     <!-- HEADER BLOCK -->
-    <div style="position:relative; z-index:2; padding:10px 16px 4px 16px; text-align:center;">
-      <!-- Top Title: PRESS ID CARD -->
+    <div style="position:relative; z-index:2; padding:8px 16px 2px 16px; text-align:center;">
+      <!-- Top Title: PRESS ID CARD (Deep Slate Navy) -->
       <div style="
         font-family:'Arial Black', Impact, -apple-system, sans-serif;
-        font-size:clamp(0.72rem, 3.6cqw, 0.95rem);
+        font-size:clamp(0.75rem, 3.8cqw, 1.0rem);
         font-weight:900;
-        color:#b91c1c;
+        color:#0f172a;
         letter-spacing:4px;
         text-transform:uppercase;
         margin-bottom:2px;
-        text-shadow:0 1px 2px rgba(255, 255, 255, 0.9);
+        text-shadow:0 1px 1px rgba(255, 255, 255, 0.9);
       ">
         PRESS ID CARD
       </div>
 
-      <!-- Official Uploaded ND30 LIVE Logo -->
-      <div style="display:flex; align-items:center; justify-content:center; height:clamp(46px, 11cqw, 62px); margin:2px auto 4px auto;">
+      <!-- Official Uploaded ND30 LIVE Logo (Enlarged) -->
+      <div style="display:flex; align-items:center; justify-content:center; height:clamp(64px, 16cqw, 88px); margin:1px auto 3px auto; max-width:96%;">
         <img 
           src="${BASE_URL}/images/nd30_live_logo.png" 
           alt="ND30 LIVE" 
-          style="max-height:100%; max-width:85%; object-fit:contain; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.18));"
+          style="max-height:100%; width:auto; max-width:96%; object-fit:contain; display:block; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.2));"
         >
       </div>
 
-      <!-- Assamese Official Slogan Ribbon -->
+      <!-- Assamese Official Slogan Ribbon (Decreased Compact Size) -->
       <div style="
         background:linear-gradient(90deg, #1e3a8a 0%, #2563eb 50%, #1e3a8a 100%);
-        border-radius:6px;
-        padding:4px 10px;
-        margin:6px auto 0 auto;
-        max-width:92%;
+        border-radius:4px;
+        padding:2.5px 8px;
+        margin:3px auto 0 auto;
+        max-width:78%;
         display:flex;
         align-items:center;
         justify-content:center;
-        gap:6px;
-        box-shadow:0 3px 10px rgba(30, 58, 138, 0.35);
-        border-left:3.5px solid #dc2626;
-        border-right:3.5px solid #dc2626;
+        gap:5px;
+        box-shadow:0 2px 6px rgba(30, 58, 138, 0.3);
+        border-left:3px solid #dc2626;
+        border-right:3px solid #dc2626;
       ">
-        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.7rem, 3.5cqw, 0.95rem);">//</span>
+        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.55rem, 2.7cqw, 0.72rem);">//</span>
         <span style="
           color:#ffffff;
           font-weight:800;
-          font-size:clamp(0.68rem, 3.4cqw, 0.92rem);
-          letter-spacing:0.3px;
+          font-size:clamp(0.52rem, 2.6cqw, 0.7rem);
+          letter-spacing:0.2px;
           text-shadow:0 1px 2px rgba(0,0,0,0.5);
           white-space:nowrap;
         ">
           উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ
         </span>
-        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.7rem, 3.5cqw, 0.95rem);">//</span>
+        <span style="color:#ef4444; font-weight:900; font-size:clamp(0.55rem, 2.7cqw, 0.72rem);">//</span>
       </div>
     </div>
 
@@ -525,9 +525,9 @@ function renderPressCardFrontHtml(app, qrDataUrl, verifyUrl) {
         <!-- Authorized Signatory on Bottom Right -->
         <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:center;">
           <img 
-            src="${BASE_URL}/images/nd30_sign_transparent.png" 
+            src="${BASE_URL}/images/nd30_sign_transparent.png?v=2" 
             alt="Authorised Signatory" 
-            style="height:clamp(32px, 8cqw, 48px); max-width:140px; object-fit:contain; display:block; filter:brightness(0) invert(1);"
+            style="height:clamp(28px, 7cqw, 40px); max-width:140px; object-fit:contain; display:block; filter:brightness(0) invert(1);"
             onerror="this.style.display='none';"
           >
           <div style="
@@ -1251,38 +1251,39 @@ function generatePressCardPng(app) {
       $sf.Alignment = [System.Drawing.StringAlignment]::Center
       $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
 
-      # Top Title: PRESS ID CARD
+      # Top Title: PRESS ID CARD (Deep Slate Navy)
       $fontTop = New-Object System.Drawing.Font('Arial Black', 13, [System.Drawing.FontStyle]::Bold)
-      $brushCrimson = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(185, 28, 28))
-      $g.DrawString('PRESS ID CARD', $fontTop, $brushCrimson, [float]($W / 2), 24, $sf)
+      $brushDarkSlate = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(15, 23, 42))
+      $g.DrawString('PRESS ID CARD', $fontTop, $brushDarkSlate, [float]($W / 2), 20, $sf)
       $fontTop.Dispose()
-      $brushCrimson.Dispose()
+      $brushDarkSlate.Dispose()
 
-      # Official Uploaded ND30 LIVE Logo
+      # Official Uploaded ND30 LIVE Logo (Enlarged)
       $lPath = '${logoPath.replace(/'/g, "''")}'
       if ([System.IO.File]::Exists($lPath)) {
         try {
           $logo = [System.Drawing.Bitmap]::FromFile($lPath)
-          $g.DrawImage($logo, [int](($W - 320) / 2), 42, 320, 72)
+          $g.DrawImage($logo, [int](($W - 410) / 2), 36, 410, 94)
           $logo.Dispose()
         } catch {}
       }
 
-      # Blue Slogan Ribbon
+      # Blue Slogan Ribbon (Decreased Compact Size)
+      $rW = $W - 140
+      $rX = 70
+      $rH = 26
+      $rY = 134
       $blueGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        (New-Object System.Drawing.Point(40, 114)),
-        (New-Object System.Drawing.Point($W - 40, 114)),
+        (New-Object System.Drawing.Point($rX, $rY)),
+        (New-Object System.Drawing.Point($rX + $rW, $rY)),
         [System.Drawing.Color]::FromArgb(30, 58, 138),
         [System.Drawing.Color]::FromArgb(37, 99, 235)
       )
-      $g.FillRectangle($blueGrad, 40, 114, $W - 80, 34)
+      $g.FillRectangle($blueGrad, $rX, $rY, $rW, $rH)
       $blueGrad.Dispose()
 
-      $fontRibbon = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
-      $sf = New-Object System.Drawing.StringFormat
-      $sf.Alignment = [System.Drawing.StringAlignment]::Center
-      $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
-      $g.DrawString('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', $fontRibbon, $brushWhite, [float]($W / 2), 131, $sf)
+      $fontRibbon = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
+      $g.DrawString('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', $fontRibbon, $brushWhite, [float]($W / 2), $rY + 13, $sf)
       $fontRibbon.Dispose()
 
       # Left PRESS Ribbon

@@ -411,57 +411,57 @@ function renderVerifyPressIdPage(app, pressIdCode) {
       ctx.save();
       ctx.fillStyle = '#b91c1c';
       ctx.beginPath();
-      ctx.moveTo(200, 0);
-      ctx.bezierCurveTo(340, 0, 480, 40, 560, 90);
-      ctx.bezierCurveTo(610, 120, 640, 150, W, 170);
+      ctx.moveTo(320, 0);
+      ctx.bezierCurveTo(420, 0, 520, 25, 580, 65);
+      ctx.bezierCurveTo(625, 95, 645, 125, W, 150);
       ctx.lineTo(W, 0);
       ctx.closePath();
       ctx.fill();
 
       ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
       ctx.beginPath();
-      ctx.moveTo(350, 0);
-      ctx.bezierCurveTo(460, 0, 550, 30, 600, 70);
+      ctx.moveTo(420, 0);
+      ctx.bezierCurveTo(490, 0, 560, 20, 600, 50);
       ctx.lineTo(W, 110);
       ctx.lineTo(W, 0);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
 
-      // Top Title: PRESS ID CARD
+      // Top Title: PRESS ID CARD (Deep Slate Navy)
       ctx.save();
       ctx.font = '900 17px "Arial Black", Impact, sans-serif';
-      ctx.fillStyle = '#b91c1c';
+      ctx.fillStyle = '#0f172a';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('PRESS ID CARD', W / 2, 28);
+      ctx.fillText('PRESS ID CARD', W / 2, 22);
       ctx.restore();
 
-      // Official Uploaded ND30 LIVE Logo
+      // Official Uploaded ND30 LIVE Logo (Enlarged)
       const logoImg = await loadImageHelper('/images/nd30_live_logo.png');
       if (logoImg) {
-        ctx.drawImage(logoImg, (W - 310) / 2, 44, 310, 68);
+        ctx.drawImage(logoImg, (W - 410) / 2, 36, 410, 94);
       }
 
-      // Slogan Ribbon
+      // Slogan Ribbon (Decreased Compact Size)
       ctx.save();
-      const rX = 40, rY = 114, rW = W - 80, rH = 34;
+      const rX = 70, rY = 134, rW = W - 140, rH = 26;
       const ribbonGrad = ctx.createLinearGradient(rX, 0, rX + rW, 0);
       ribbonGrad.addColorStop(0, '#1e3a8a');
       ribbonGrad.addColorStop(0.5, '#2563eb');
       ribbonGrad.addColorStop(1, '#1e3a8a');
       ctx.fillStyle = ribbonGrad;
       ctx.beginPath();
-      ctx.roundRect(rX, rY, rW, rH, 6);
+      ctx.roundRect(rX, rY, rW, rH, 4);
       ctx.fill();
 
       // Red end borders
       ctx.fillStyle = '#dc2626';
-      ctx.fillRect(rX, rY, 5, rH);
-      ctx.fillRect(rX + rW - 5, rY, 5, rH);
+      ctx.fillRect(rX, rY, 4, rH);
+      ctx.fillRect(rX + rW - 4, rY, 4, rH);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
+      ctx.font = 'bold 13.5px "Segoe UI", Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('//  উত্তৰ-পূবৰ কণ্ঠস্বৰ • নিৰ্ভীক আৰু নিৰপেক্ষ  //', W / 2, rY + (rH / 2));
@@ -628,7 +628,7 @@ function renderVerifyPressIdPage(app, pressIdCode) {
 
       // Bottom Right: Signatory & ND30 LIVE
       ctx.save();
-      const signImg = await loadImageHelper('/images/nd30_sign_transparent.png');
+      const signImg = await loadImageHelper('/images/nd30_sign_transparent.png?v=2');
       if (signImg) {
         // Draw white signature
         ctx.drawImage(signImg, W - 245, 856, 180, 55);
