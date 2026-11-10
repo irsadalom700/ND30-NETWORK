@@ -29,7 +29,8 @@ function decodeHtmlEntities(str) {
     .replace(/&#8221;/g, "”")
     .replace(/&#8211;/g, "–")
     .replace(/&#8212;/g, "—")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code))
+    .replace(/&#x([0-9a-fA-F]+);?/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);?/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
     .trim();
 }
 
@@ -179,6 +180,14 @@ async function fetchFacebookPostMetadata(url, mediaType = 'post') {
 
     // Clean generic Facebook suffix from titles
     title = title.replace(/\s*\|\s*Facebook$/i, '').replace(/\s*-\s*Facebook$/i, '').trim();
+
+    // Clean Facebook view count prefix e.g. "1.1K views · 18 reactions | Real Headline"
+    if (title.includes(' | ')) {
+      const parts = title.split(' | ');
+      if (parts[0].match(/\d+(\.\d+)?[KkMm]?\s*(views|bar|बार|বাৰ|reactions|प्रतिक्रिया|প্ৰতিক্ৰিয়া)/i)) {
+        title = parts.slice(1).join(' | ').trim();
+      }
+    }
 
     return {
       title,
@@ -695,11 +704,13 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
 
   const fullArticleHtml = `${videoEmbedHtml}<p>${baseContent.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>${sourceLinkHtml}`;
 
+  const postVideoUrl = ((post.media_type === 'video' || post.media_type === 'reel') && post.post_url) ? post.post_url : null;
+
   const insertTranslationStmt = db.prepare(`
     INSERT INTO article_translations (
       article_id, lang_code, title, slug, summary, content, category_id,
-      featured_image, status, author_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'Facebook Review Queue')
+      featured_image, status, author_name, video_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'Facebook Review Queue', ?)
   `);
 
   // 1. Insert primary language draft
@@ -711,7 +722,8 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
     baseContent.slice(0, 180),
     fullArticleHtml,
     cat?.id || null,
-    post.image_url || '/uploads/nd30_news_banner.jpg'
+    post.image_url || '/uploads/nd30_news_banner.jpg',
+    postVideoUrl
   );
 
   // 2. Automatically generate drafts for all other languages
@@ -744,7 +756,8 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
         trans.translatedDraft.summary,
         translatedHtml,
         matchedCat?.id || null,
-        post.image_url || '/uploads/nd30_news_banner.jpg'
+        post.image_url || '/uploads/nd30_news_banner.jpg',
+        postVideoUrl
       );
     } catch (err) {
       console.error(`Error auto-translating FB post to ${otherLang}:`, err.message);

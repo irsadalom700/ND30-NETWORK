@@ -6,6 +6,46 @@ const { db } = require('../database/db');
 const { renderAdSliderHtml } = require('./adSlider');
 const { getActiveSlides } = require('../services/advertisementService');
 
+function getArticleVideoUrl(art) {
+  if (!art) return null;
+  if (art.video_url) return art.video_url;
+  if (!art.content) return null;
+  const m = art.content.match(/facebook\.com\/plugins\/video\.php\?href=([^"&]+)/i);
+  if (m) {
+    try { return decodeURIComponent(m[1]); } catch(e) { return m[1]; }
+  }
+  return null;
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, ' ');
+}
+
+function renderCardPlayOverlay(videoUrl, art, currentLang, isCompact = false) {
+  if (!videoUrl || !art) return '';
+  const escapedUrl = escapeAttr(videoUrl);
+  const escapedTitle = escapeAttr(art.title || '');
+  const articleUrl = `/${currentLang}/${art.category_slug || 'news'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}`;
+  const btnSize = isCompact ? '38px' : '52px';
+  const iconSize = isCompact ? '20' : '26';
+
+  return `
+    <div class="card-video-play-overlay" onclick="event.preventDefault(); event.stopPropagation(); openFrontendVideoModal('${escapedUrl}', '${escapedTitle}', '${articleUrl}')" title="Play Video">
+      <div class="card-play-button" style="width:${btnSize}; height:${btnSize};">
+        <svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}" fill="#ffffff" style="margin-left:2px;">
+          <polygon points="7 4 20 12 7 20 7 4"></polygon>
+        </svg>
+      </div>
+      ${!isCompact ? '<span class="card-video-pill">▶ VIDEO</span>' : ''}
+    </div>
+  `;
+}
+
 function renderHomePage(lang = 'as') {
   const currentLang = lang || 'as';
   const adSlides = getActiveSlides();
@@ -60,11 +100,14 @@ function renderHomePage(lang = 'as') {
   return `
   <div class="container">
     <!-- Hero News Section -->
-    ${heroPrimary ? `
+    ${heroPrimary ? (() => {
+      const heroPrimaryVideo = getArticleVideoUrl(heroPrimary);
+      return `
     <section class="hero-news-grid" aria-label="Top Featured Stories">
       <!-- Primary Big Hero -->
       <article class="hero-primary-card">
         <img src="${heroPrimary.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${heroPrimary.title}" class="hero-img-backdrop" loading="eager">
+        ${renderCardPlayOverlay(heroPrimaryVideo, heroPrimary, currentLang)}
         <div class="hero-overlay"></div>
         <div class="hero-content">
           <span class="hero-tag">${heroPrimary.category_name || 'Top Story'}</span>
@@ -84,9 +127,14 @@ function renderHomePage(lang = 'as') {
 
       <!-- Secondary Hero Stack -->
       <div class="hero-secondary-stack">
-        ${heroSecondary.map(art => `
+        ${heroSecondary.map(art => {
+          const vUrl = getArticleVideoUrl(art);
+          return `
           <article class="news-card-compact">
-            <img src="${art.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${art.title}" class="news-card-compact-img" loading="lazy">
+            <div style="position:relative; width:120px; height:80px; flex-shrink:0; border-radius:6px; overflow:hidden;">
+              <img src="${art.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${art.title}" class="news-card-compact-img" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+              ${renderCardPlayOverlay(vUrl, art, currentLang, true)}
+            </div>
             <div class="news-card-compact-body">
               <div>
                 <span class="news-card-cat">${art.category_name || 'News'}</span>
@@ -101,12 +149,13 @@ function renderHomePage(lang = 'as') {
               </div>
             </div>
           </article>
-        `).join('')}
+        `;}).join('')}
 
         <!-- Advertisement Photo Slider with WhatsApp Contact (Marked place requested by user) -->
         ${renderAdSliderHtml(adSlides)}
       </div>
-    </section>` : ''}
+    </section>`;
+    })() : ''}
 
     <!-- Main 2-Column Content / Sidebar Area -->
     <div class="home-main-layout">
@@ -118,10 +167,13 @@ function renderHomePage(lang = 'as') {
         </div>
 
         <div class="news-grid-cards">
-          ${(remainingArticles.length > 0 ? remainingArticles : latestArticles).map(art => `
+          ${(remainingArticles.length > 0 ? remainingArticles : latestArticles).map(art => {
+            const vUrl = getArticleVideoUrl(art);
+            return `
             <article class="news-card">
               <div class="news-card-img-wrap">
                 <img src="${art.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${art.title}" class="news-card-img" loading="lazy">
+                ${renderCardPlayOverlay(vUrl, art, currentLang)}
               </div>
               <div class="news-card-body">
                 <span class="news-card-cat">${art.category_name || 'News'}</span>
@@ -137,7 +189,7 @@ function renderHomePage(lang = 'as') {
                 </div>
               </div>
             </article>
-          `).join('')}
+          `;}).join('')}
         </div>
       </div>
 

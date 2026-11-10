@@ -132,6 +132,149 @@ function renderLayout({
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/reporter.css">
   <link rel="stylesheet" href="/css/advertisement.css">
+  <style>
+    /* Play Icon Overlay for Video Cards */
+    .news-card-img-wrap,
+    .hero-primary-card,
+    .news-card-compact {
+      position: relative;
+    }
+    .card-video-play-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.5) 100%);
+      cursor: pointer;
+      z-index: 5;
+      transition: all 0.25s ease;
+    }
+    .card-video-play-overlay:hover {
+      background: radial-gradient(circle, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%);
+    }
+    .card-play-button {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 18px rgba(220, 38, 38, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.4);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+    .card-video-play-overlay:hover .card-play-button {
+      transform: scale(1.15);
+      box-shadow: 0 6px 26px rgba(220, 38, 38, 0.95), 0 0 0 6px rgba(255, 255, 255, 0.6);
+    }
+    .card-video-pill {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(220, 38, 38, 0.95);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    /* Video Lightbox */
+    .video-lightbox-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .video-lightbox-overlay.active {
+      display: flex;
+    }
+    .video-lightbox-container {
+      width: 100%;
+      max-width: 820px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+    }
+    .video-lightbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(0, 0, 0, 0.45);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .video-lightbox-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .video-lightbox-close {
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      color: #fff;
+      font-size: 1.25rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .video-lightbox-close:hover {
+      background: #dc2626;
+      transform: rotate(90deg);
+    }
+    .video-lightbox-body {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      background: #000;
+    }
+    .video-lightbox-body iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .video-lightbox-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(0, 0, 0, 0.45);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
 </head>
 <body>
   <!-- Top Utility Bar -->
@@ -339,6 +482,72 @@ function renderLayout({
 
   <!-- Book Advertisement Modal Popup -->
   ${renderAdvertisementModal(currentLang)}
+
+  <!-- Frontend Facebook Video Lightbox Player Modal -->
+  <div id="frontendVideoModal" class="video-lightbox-overlay" onclick="handleVideoModalBackdropClick(event)">
+    <div class="video-lightbox-container" role="dialog" aria-modal="true" aria-labelledby="modalVideoTitle">
+      <div class="video-lightbox-header">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; margin-right:12px;">
+          <span style="background:#dc2626; color:#fff; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:4px; flex-shrink:0;">▶ VIDEO</span>
+          <h3 id="modalVideoTitle" class="video-lightbox-title">ND30 Video</h3>
+        </div>
+        <button type="button" class="video-lightbox-close" onclick="closeFrontendVideoModal()" title="Close Video (Esc)">&times;</button>
+      </div>
+      <div class="video-lightbox-body">
+        <iframe id="frontendVideoIframe" src="about:blank" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" scrolling="no"></iframe>
+      </div>
+      <div class="video-lightbox-footer">
+        <a id="modalArticleLink" href="#" class="btn btn-primary btn-sm" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; text-decoration:none;">
+          <span>📖</span> Read Full Story ↗
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeFrontendVideoModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openFrontendVideoModal(videoUrl, title, articleUrl) {
+      if (!videoUrl) return;
+      var modal = document.getElementById('frontendVideoModal');
+      var iframe = document.getElementById('frontendVideoIframe');
+      var titleEl = document.getElementById('modalVideoTitle');
+      var linkEl = document.getElementById('modalArticleLink');
+
+      if (titleEl) titleEl.innerText = title || 'ND30 Video Coverage';
+      if (linkEl) linkEl.href = articleUrl || '#';
+
+      // Load Facebook video with autoplay enabled
+      var embedSrc = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(videoUrl) + '&show_text=false&autoplay=true&width=780';
+      if (iframe) iframe.src = embedSrc;
+
+      if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeFrontendVideoModal() {
+      var modal = document.getElementById('frontendVideoModal');
+      var iframe = document.getElementById('frontendVideoIframe');
+      if (iframe) iframe.src = 'about:blank'; // stop video & audio immediately
+      if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function handleVideoModalBackdropClick(e) {
+      if (e.target && e.target.id === 'frontendVideoModal') {
+        closeFrontendVideoModal();
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeFrontendVideoModal();
+      }
+    });
+  </script>
 
   <script src="/js/main.js"></script>
   ${joinUsEnabled ? '<script src="/js/reporter.js"></script>' : ''}

@@ -314,6 +314,9 @@ function initDatabase() {
   try { db.exec('ALTER TABLE facebook_imported_posts ADD COLUMN post_url TEXT'); } catch(e) {}
   try { db.exec("ALTER TABLE facebook_imported_posts ADD COLUMN media_type TEXT DEFAULT 'post'"); } catch(e) {}
 
+  // Ensure dynamic columns exist for article_translations
+  try { db.exec('ALTER TABLE article_translations ADD COLUMN video_url TEXT'); } catch(e) {}
+
   // Ensure dynamic columns exist for reporter_applications
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_code TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_qr TEXT'); } catch(e) {}

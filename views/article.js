@@ -7,6 +7,46 @@
 
 const { db } = require('../database/db');
 
+function getArticleVideoUrl(art) {
+  if (!art) return null;
+  if (art.video_url) return art.video_url;
+  if (!art.content) return null;
+  const m = art.content.match(/facebook\.com\/plugins\/video\.php\?href=([^"&]+)/i);
+  if (m) {
+    try { return decodeURIComponent(m[1]); } catch(e) { return m[1]; }
+  }
+  return null;
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, ' ');
+}
+
+function renderCardPlayOverlay(videoUrl, art, currentLang, isCompact = false) {
+  if (!videoUrl || !art) return '';
+  const escapedUrl = escapeAttr(videoUrl);
+  const escapedTitle = escapeAttr(art.title || '');
+  const articleUrl = `/${currentLang}/${art.category_slug || 'news'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}`;
+  const btnSize = isCompact ? '38px' : '52px';
+  const iconSize = isCompact ? '20' : '26';
+
+  return `
+    <div class="card-video-play-overlay" onclick="event.preventDefault(); event.stopPropagation(); openFrontendVideoModal('${escapedUrl}', '${escapedTitle}', '${articleUrl}')" title="Play Video">
+      <div class="card-play-button" style="width:${btnSize}; height:${btnSize};">
+        <svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}" fill="#ffffff" style="margin-left:2px;">
+          <polygon points="7 4 20 12 7 20 7 4"></polygon>
+        </svg>
+      </div>
+      ${!isCompact ? '<span class="card-video-pill">▶ VIDEO</span>' : ''}
+    </div>
+  `;
+}
+
 function renderArticlePage({ translation, allTranslationsForStory, relatedArticles }) {
   const currentLang = translation.lang_code;
   const baseUrl = process.env.BASE_URL || 'http://localhost:3030';
@@ -36,6 +76,10 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
 
   // Available translations for this article cluster
   const availableLangs = allTranslationsForStory.map(t => t.lang_code);
+  const heroVideoUrl = getArticleVideoUrl(translation);
+  const cleanProse = heroVideoUrl 
+    ? translation.content.replace(/<div class="fb-video-container"[\s\S]*?<\/div>/gi, '')
+    : translation.content;
 
   return `
   <!-- Reading Progress Bar -->
@@ -129,12 +173,22 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
           </div>
         </header>
 
-        <!-- Featured Media Image -->
-        ${translation.featured_image ? `
+        <!-- Featured Video Player Hero or Featured Media Image -->
+        ${heroVideoUrl ? `
+        <div class="article-video-hero-player" style="margin:20px 0 26px 0; border-radius:12px; overflow:hidden; background:#000; box-shadow:0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+          <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden;">
+            <iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(heroVideoUrl)}&show_text=false&autoplay=true&width=780"
+                    style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"
+                    scrolling="no" frameborder="0" allowfullscreen="true"
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+            </iframe>
+          </div>
+        </div>
+        ` : (translation.featured_image ? `
         <figure class="article-featured-img-wrap">
           <img src="${translation.featured_image}" alt="${translation.title}" class="article-featured-img">
           ${translation.image_caption ? `<figcaption class="article-img-caption">${translation.image_caption}</figcaption>` : ''}
-        </figure>` : ''}
+        </figure>` : '')}
 
         <!-- Inline In-Article AdSense Unit -->
         ${inArticleAd ? `
@@ -155,7 +209,7 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
 
         <!-- Full Article Body -->
         <div class="article-prose">
-          ${translation.content}
+          ${cleanProse}
         </div>
 
         <!-- Article Tags -->
@@ -176,10 +230,13 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
             </h3>
           </div>
           <div class="news-grid-cards">
-            ${relatedArticles.map(rel => `
+            ${relatedArticles.map(rel => {
+              const relVideoUrl = getArticleVideoUrl(rel);
+              return `
               <article class="news-card">
-                <div class="news-card-img-wrap" style="height:140px;">
+                <div class="news-card-img-wrap" style="height:140px; position:relative;">
                   <img src="${rel.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${rel.title}" class="news-card-img" loading="lazy">
+                  ${renderCardPlayOverlay(relVideoUrl, rel, currentLang, true)}
                 </div>
                 <div class="news-card-body">
                   <h4 class="news-card-title" style="font-size:0.95rem;">
@@ -189,7 +246,7 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
                   </h4>
                 </div>
               </article>
-            `).join('')}
+            `;}).join('')}
           </div>
         </div>` : ''}
       </article>
