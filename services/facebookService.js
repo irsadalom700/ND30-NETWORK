@@ -292,7 +292,8 @@ async function importSingleFacebookLink({
   customContent = '',
   targetLang = 'auto',
   autoDraft = false,
-  pageId = null
+  pageId = null,
+  isManual = true
 }) {
   const urlInfo = extractFacebookUrlInfo(url);
   if (!urlInfo) {
@@ -316,8 +317,8 @@ async function importSingleFacebookLink({
 
   const combinedText = `${finalHeadline}\n${finalContent}`;
 
-  // 2. Check for automation loop
-  if (checkForAutomationLoop(combinedText, urlInfo.postId)) {
+  // 2. Check for automation loop (only for background automated ingest, never block manual admin imports)
+  if (!isManual && checkForAutomationLoop(combinedText, urlInfo.postId)) {
     throw new Error('Automation Loop Prevented: This post originated from ND30 Website syndication.');
   }
 
@@ -465,7 +466,8 @@ async function importMultipleFacebookLinks({
         url,
         targetLang: defaultLang,
         autoDraft,
-        pageId
+        pageId,
+        isManual: true
       });
       if (res.alreadyExisted) {
         alreadyExistedCount++;
@@ -704,30 +706,48 @@ async function syncFacebookPage(pageRecordId) {
 
 /**
  * Loop prevention logic
+ * Checks if an automated background Facebook post originated from ND30 Website outbound syndication.
+ * Note: Only flags explicit website article URLs or confirmed outbound IFTTT/webhook payloads.
+ * Legitimate posts from the ND30 Facebook page or posts mentioning ND30 must NEVER be falsely blocked!
  */
 function checkForAutomationLoop(message, fbPostId) {
-  if (!message) return false;
+  if (!message || typeof message !== 'string') return false;
 
-  if (message.includes('nd30live') || message.includes('nd30news') || message.includes('localhost:3030/as/') || message.includes('localhost:3030/hi/') || message.includes('localhost:3030/en/') || message.includes('localhost:3000')) {
+  // 1. Check for explicit website news story syndication URLs (e.g. nd30live.in/as/news/... or localhost:3030/en/...)
+  const websiteArticleUrlPattern = /(?:nd30live\.in|localhost:\d+)\/(?:as|hi|en)\/[a-z0-9_-]+\/[a-z0-9_-]+/i;
+  if (websiteArticleUrlPattern.test(message)) {
     return true;
   }
 
-  const firstLine = message.split('\n')[0].trim();
-  const recentLogs = db.prepare(`
-    SELECT payload FROM ifttt_event_logs
-    WHERE direction = 'outbound'
-    ORDER BY id DESC LIMIT 50
-  `).all();
+  // 2. Check against recent outbound syndication logs (IFTTT / Maker Webhooks)
+  try {
+    const recentLogs = db.prepare(`
+      SELECT payload FROM ifttt_event_logs
+      WHERE direction = 'outbound'
+      ORDER BY id DESC LIMIT 50
+    `).all();
 
-  for (const log of recentLogs) {
-    try {
-      const p = JSON.parse(log.payload);
-      if (p.headline && (firstLine.includes(p.headline) || p.headline.includes(firstLine))) {
-        return true;
+    const lines = message.split('\n').map(l => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || '';
+
+    for (const log of recentLogs) {
+      try {
+        const p = JSON.parse(log.payload);
+        if (p.article_url && message.includes(p.article_url)) {
+          return true;
+        }
+        // Only compare headline if it's substantive (> 15 chars) to prevent false substring collisions
+        if (p.headline && p.headline.length > 15 && firstLine.length > 15) {
+          if (firstLine.includes(p.headline) || p.headline.includes(firstLine)) {
+            return true;
+          }
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
     }
+  } catch (dbErr) {
+    // If DB table not ready or error, safe fallback
   }
 
   return false;

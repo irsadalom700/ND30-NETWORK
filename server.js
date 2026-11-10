@@ -1909,7 +1909,8 @@ app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req
       customContent: customContent ? customContent.trim() : '',
       targetLang: defaultLang || 'auto',
       autoDraft: !!autoDraft,
-      pageId: pageId || null
+      pageId: pageId || null,
+      isManual: true
     });
 
     return res.json(result);
