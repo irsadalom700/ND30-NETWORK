@@ -187,6 +187,125 @@ function renderLayout({
       box-shadow: 0 2px 6px rgba(0,0,0,0.6);
       pointer-events: none;
     }
+    /* Hero Autoplay Video Card (Preserves Exact Section Size) */
+    .hero-video-primary-card {
+      justify-content: flex-start !important;
+      background: #0b1120 !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      padding: 0 !important;
+      overflow: hidden;
+      min-height: 440px;
+    }
+    .hero-video-bar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: rgba(15, 23, 42, 0.98);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+    .hero-video-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(220, 38, 38, 0.16);
+      border: 1px solid rgba(220, 38, 38, 0.42);
+      color: #ef4444;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .hero-video-actions-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-video-ext-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #1877F2;
+      color: #fff;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      box-shadow: 0 2px 6px rgba(24, 119, 242, 0.35);
+      transition: opacity 0.2s ease;
+    }
+    .hero-video-ext-link:hover {
+      opacity: 0.9;
+    }
+    .hero-video-expand-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #e2e8f0;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hero-video-expand-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+    .hero-video-player-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 295px;
+      background: #000;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .hero-video-embed-iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .hero-video-content-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, #0f172a 0%, #080c14 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hero-playing-live-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: #ef4444;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    @media (max-width: 768px) {
+      .hero-video-player-container {
+        max-height: none;
+        aspect-ratio: 16 / 9;
+      }
+      .hero-video-content-panel {
+        padding: 12px 14px;
+      }
+      .hero-video-content-panel .hero-title {
+        font-size: 1.15rem !important;
+      }
+    }
     /* Video Lightbox */
     .video-lightbox-overlay {
       display: none;
@@ -636,6 +755,29 @@ function renderLayout({
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeFrontendVideoModal();
+      }
+    });
+
+    // Auto-resolve hero autoplay video if needed
+    document.addEventListener('DOMContentLoaded', function() {
+      var heroIframe = document.getElementById('heroAutoplayVideoIframe');
+      if (heroIframe && heroIframe.src && (heroIframe.src.includes('share%2F') || heroIframe.src.includes('fb.watch') || heroIframe.src.includes('m.facebook.com'))) {
+        var m = heroIframe.src.match(/href=([^&]+)/);
+        if (m) {
+          var raw = decodeURIComponent(m[1]);
+          fetch('/api/facebook/resolve-video?url=' + encodeURIComponent(raw))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data && data.success && data.canonicalUrl) {
+                var clean = data.canonicalUrl.replace('m.facebook.com', 'www.facebook.com');
+                var isReel = clean.includes('/reel/') || clean.includes('/share/r/');
+                heroIframe.src = isReel
+                  ? 'https://www.facebook.com/plugins/post.php?href=' + encodeURIComponent(clean) + '&show_text=false&width=780'
+                  : 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(clean) + '&show_text=false&autoplay=true&mute=1&width=780';
+              }
+            })
+            .catch(function() {});
+        }
       }
     });
   </script>

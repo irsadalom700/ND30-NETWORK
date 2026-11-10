@@ -17,6 +17,31 @@ function getArticleVideoUrl(art) {
   return null;
 }
 
+function getAutoplayVideoSrc(videoUrl) {
+  if (!videoUrl) return '';
+  let clean = videoUrl.trim().replace('m.facebook.com', 'www.facebook.com');
+
+  // Check YouTube
+  const ytMatch = clean.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&playsinline=1&rel=0`;
+  }
+
+  // Canonicalize numeric ID for Facebook Watch if possible
+  const vMatch = clean.match(/watch\/?\?v=(\d+)/i) || clean.match(/\/videos\/(\d+)/i);
+  if (vMatch) {
+    clean = `https://www.facebook.com/watch/?v=${vMatch[1]}`;
+  }
+
+  const isReel = clean.includes('/reel/') || clean.includes('/share/r/');
+  if (isReel) {
+    return `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(clean)}&show_text=false&width=780`;
+  }
+
+  // Facebook standard video: autoplay=true and mute=1 enables seamless cross-browser autoplay
+  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clean)}&show_text=false&autoplay=true&mute=1&width=780`;
+}
+
 function escapeAttr(str) {
   if (!str) return '';
   return String(str)
@@ -50,7 +75,18 @@ function renderHomePage(lang = 'as') {
   const currentLang = lang || 'as';
   const adSlides = getActiveSlides();
 
-  // Fetch featured articles
+  // 1. Fetch latest published article with video (Prioritized for Top Autoplay Hero Section)
+  const latestVideoArticle = db.prepare(`
+    SELECT t.*, c.name as category_name, c.slug as category_slug
+    FROM article_translations t
+    LEFT JOIN categories c ON t.category_id = c.id
+    WHERE t.lang_code = ? AND t.status = 'published'
+      AND ((t.video_url IS NOT NULL AND t.video_url != '') OR t.content LIKE '%facebook.com/plugins%')
+    ORDER BY t.published_at DESC
+    LIMIT 1
+  `).get(currentLang);
+
+  // 2. Fetch featured articles
   const featuredArticles = db.prepare(`
     SELECT t.*, c.name as category_name, c.slug as category_slug
     FROM article_translations t
@@ -60,7 +96,7 @@ function renderHomePage(lang = 'as') {
     LIMIT 4
   `).all(currentLang);
 
-  // Fetch all latest published articles
+  // 3. Fetch all latest published articles
   const latestArticles = db.prepare(`
     SELECT t.*, c.name as category_name, c.slug as category_slug
     FROM article_translations t
@@ -70,7 +106,7 @@ function renderHomePage(lang = 'as') {
     LIMIT 12
   `).all(currentLang);
 
-  // Fetch trending articles
+  // 4. Fetch trending articles
   const trendingArticles = db.prepare(`
     SELECT t.*, c.name as category_name, c.slug as category_slug
     FROM article_translations t
@@ -85,8 +121,14 @@ function renderHomePage(lang = 'as') {
     || db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'sidebar_rectangle' AND is_active = 1").get();
   const sidebarAd = db.prepare("SELECT * FROM adsense_slots WHERE slot_key = 'sidebar_rectangle' AND is_active = 1").get();
 
-  const heroPrimary = featuredArticles[0] || latestArticles[0];
-  const heroSecondary = (featuredArticles.length > 1 ? featuredArticles.slice(1, 4) : latestArticles.slice(1, 4));
+  // Primary Hero is latest post with video if available, otherwise featured/latest
+  const heroPrimary = latestVideoArticle || featuredArticles[0] || latestArticles[0];
+
+  // Secondary stack excludes heroPrimary
+  const candidateSecondary = featuredArticles.filter(a => a.id !== heroPrimary?.id);
+  const heroSecondary = (candidateSecondary.length >= 3 
+    ? candidateSecondary.slice(0, 3) 
+    : latestArticles.filter(a => a.id !== heroPrimary?.id).slice(0, 3));
 
   const remainingArticles = latestArticles.filter(a => a.id !== heroPrimary?.id && !heroSecondary.some(s => s.id === a.id));
 
@@ -102,28 +144,103 @@ function renderHomePage(lang = 'as') {
     <!-- Hero News Section -->
     ${heroPrimary ? (() => {
       const heroPrimaryVideo = getArticleVideoUrl(heroPrimary);
+      const articleUrl = `/${currentLang}/${heroPrimary.category_slug || 'news'}/${heroPrimary.subcategory_slug ? heroPrimary.subcategory_slug + '/' : ''}${heroPrimary.slug}`;
+      const escapedUrl = escapeAttr(heroPrimaryVideo || '');
+      const escapedTitle = escapeAttr(heroPrimary.title || '');
+
+      let primaryHeroHtml = '';
+      if (heroPrimaryVideo) {
+        const autoplayEmbedSrc = getAutoplayVideoSrc(heroPrimaryVideo);
+        const videoBadgeLabel = currentLang === 'as' 
+          ? 'শেহতীয়া ভিডিঅ’ বাতৰি • লাইভ' 
+          : (currentLang === 'hi' ? 'ताज़ा वीडियो समाचार • ऑटोप्ले' : 'LATEST VIDEO BROADCAST • AUTOPLAY');
+
+        primaryHeroHtml = `
+          <article class="hero-primary-card hero-video-primary-card">
+            <!-- Top video status and action bar -->
+            <div class="hero-video-bar-top">
+              <div class="hero-video-badge-pill">
+                <span class="pulse-dot"></span>
+                <span>${videoBadgeLabel}</span>
+              </div>
+              <div class="hero-video-actions-top">
+                <a href="${escapeAttr(heroPrimaryVideo)}" target="_blank" rel="noopener noreferrer" class="hero-video-ext-link" title="Watch Directly on Facebook">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#ffffff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  <span>Watch on Facebook ↗</span>
+                </a>
+                <button type="button" class="hero-video-expand-btn" onclick="openFrontendVideoModal('${escapedUrl}', '${escapedTitle}', '${articleUrl}')" title="Expand Fullscreen Lightbox">
+                  ⛶ Expand
+                </button>
+              </div>
+            </div>
+
+            <!-- Responsive 16:9 Autoplaying Video Area (Preserves Exact Same Card Dimensions) -->
+            <div class="hero-video-player-container">
+              <iframe 
+                id="heroAutoplayVideoIframe"
+                src="${autoplayEmbedSrc}" 
+                class="hero-video-embed-iframe" 
+                scrolling="no" 
+                frameborder="0" 
+                allowfullscreen="true" 
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+              </iframe>
+            </div>
+
+            <!-- News Headline & Metadata Area below Video -->
+            <div class="hero-video-content-panel">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span class="hero-tag" style="margin-bottom:0;">${heroPrimary.category_name || 'Top Story'}</span>
+                <span class="hero-playing-live-tag">
+                  <span class="pulse-dot" style="background:#ef4444; width:5px; height:5px;"></span>
+                  <span>AUTOPLAYING</span>
+                </span>
+              </div>
+              <h2 class="hero-title" style="font-size:1.32rem; line-height:1.3; margin:4px 0 8px 0; -webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;">
+                <a href="${articleUrl}">
+                  ${heroPrimary.title}
+                </a>
+              </h2>
+              ${heroPrimary.summary ? `<p class="hero-summary" style="margin-bottom:8px; font-size:0.88rem; -webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; color:#cbd5e1;">${heroPrimary.summary}</p>` : ''}
+              <div class="hero-meta" style="display:flex; align-items:center; flex-wrap:wrap; gap:12px; font-size:0.78rem; color:var(--text-subtle);">
+                <span>✍️ ${heroPrimary.author_name || 'ND30 Desk'}</span>
+                <span>🕒 ${new Date(heroPrimary.published_at || heroPrimary.created_at).toLocaleDateString()}</span>
+                <span>👁️ ${heroPrimary.views_count || 120} views</span>
+                <a href="${articleUrl}" style="margin-left:auto; color:var(--primary-red); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                  Read Story →
+                </a>
+              </div>
+            </div>
+          </article>
+        `;
+      } else {
+        primaryHeroHtml = `
+          <article class="hero-primary-card">
+            <img src="${heroPrimary.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${heroPrimary.title}" class="hero-img-backdrop" loading="eager">
+            ${renderCardPlayOverlay(heroPrimaryVideo, heroPrimary, currentLang)}
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <span class="hero-tag">${heroPrimary.category_name || 'Top Story'}</span>
+              <h2 class="hero-title">
+                <a href="${articleUrl}">
+                  ${heroPrimary.title}
+                </a>
+              </h2>
+              <p class="hero-summary">${heroPrimary.summary || ''}</p>
+              <div class="hero-meta">
+                <span>✍️ ${heroPrimary.author_name || 'ND30 Desk'}</span>
+                <span>🕒 ${new Date(heroPrimary.published_at || heroPrimary.created_at).toLocaleDateString()}</span>
+                <span>👁️ ${heroPrimary.views_count || 120} views</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
       return `
     <section class="hero-news-grid" aria-label="Top Featured Stories">
-      <!-- Primary Big Hero -->
-      <article class="hero-primary-card">
-        <img src="${heroPrimary.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${heroPrimary.title}" class="hero-img-backdrop" loading="eager">
-        ${renderCardPlayOverlay(heroPrimaryVideo, heroPrimary, currentLang)}
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <span class="hero-tag">${heroPrimary.category_name || 'Top Story'}</span>
-          <h2 class="hero-title">
-            <a href="/${currentLang}/${heroPrimary.category_slug || 'news'}/${heroPrimary.subcategory_slug ? heroPrimary.subcategory_slug + '/' : ''}${heroPrimary.slug}">
-              ${heroPrimary.title}
-            </a>
-          </h2>
-          <p class="hero-summary">${heroPrimary.summary || ''}</p>
-          <div class="hero-meta">
-            <span>✍️ ${heroPrimary.author_name || 'ND30 Desk'}</span>
-            <span>🕒 ${new Date(heroPrimary.published_at || heroPrimary.created_at).toLocaleDateString()}</span>
-            <span>👁️ ${heroPrimary.views_count || 120} views</span>
-          </div>
-        </div>
-      </article>
+      <!-- Primary Big Hero (Autoplays latest video post) -->
+      ${primaryHeroHtml}
 
       <!-- Secondary Hero Stack -->
       <div class="hero-secondary-stack">
