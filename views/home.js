@@ -38,8 +38,8 @@ function getAutoplayVideoSrc(videoUrl) {
     return `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(clean)}&show_text=false&width=780`;
   }
 
-  // Facebook standard video: autoplay=true and mute=1 enables seamless cross-browser autoplay
-  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clean)}&show_text=false&autoplay=true&mute=1&width=780`;
+  // Facebook standard video: autoplay=true and muted=true enables seamless cross-browser autoplay
+  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clean)}&show_text=false&autoplay=true&muted=true&mute=true&width=780`;
 }
 
 function escapeAttr(str) {
@@ -183,7 +183,7 @@ function renderHomePage(lang = 'as') {
                 scrolling="no" 
                 frameborder="0" 
                 allowfullscreen="true" 
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                allow="autoplay *; fullscreen *; clipboard-write; encrypted-media; picture-in-picture; web-share">
               </iframe>
             </div>
 
@@ -276,7 +276,7 @@ function renderHomePage(lang = 'as') {
 
     <!-- Main 2-Column Content / Sidebar Area -->
     <div class="home-main-layout">
-      <!-- Latest Stories Stream -->
+      <!-- Latest Stories Stream (Lists all latest posts with Play option for videos) -->
       <div>
         <div class="section-header">
           <h3 class="section-title">🔴 ${titles.latest}</h3>
@@ -284,8 +284,9 @@ function renderHomePage(lang = 'as') {
         </div>
 
         <div class="news-grid-cards">
-          ${(remainingArticles.length > 0 ? remainingArticles : latestArticles).map(art => {
+          ${latestArticles.map(art => {
             const vUrl = getArticleVideoUrl(art);
+            const artUrl = `/${currentLang}/${art.category_slug || 'news'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}`;
             return `
             <article class="news-card">
               <div class="news-card-img-wrap">
@@ -293,16 +294,25 @@ function renderHomePage(lang = 'as') {
                 ${renderCardPlayOverlay(vUrl, art, currentLang)}
               </div>
               <div class="news-card-body">
-                <span class="news-card-cat">${art.category_name || 'News'}</span>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <span class="news-card-cat">${art.category_name || 'News'}</span>
+                  ${vUrl ? '<span style="color:#ef4444; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">▶ VIDEO</span>' : ''}
+                </div>
                 <h3 class="news-card-title">
-                  <a href="/${currentLang}/${art.category_slug || 'news'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}">
+                  <a href="${artUrl}">
                     ${art.title}
                   </a>
                 </h3>
                 <p class="news-card-summary">${art.summary || ''}</p>
-                <div class="news-card-footer">
-                  <span>${art.author_name || 'ND30'}</span>
-                  <span>${new Date(art.published_at || art.created_at).toLocaleDateString()}</span>
+                <div class="news-card-footer" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                  <span style="font-size:0.75rem; color:var(--text-subtle);">
+                    ${art.author_name || 'ND30'} • ${new Date(art.published_at || art.created_at).toLocaleDateString()}
+                  </span>
+                  ${vUrl ? `
+                    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); openFrontendVideoModal('${escapeAttr(vUrl)}', '${escapeAttr(art.title || '')}', '${artUrl}')" style="background:#dc2626; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(220,38,38,0.4);" title="Play Video">
+                      <span>▶</span> Play
+                    </button>
+                  ` : ''}
                 </div>
               </div>
             </article>

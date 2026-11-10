@@ -396,6 +396,10 @@ function renderLayout({
   </style>
 </head>
 <body>
+  <!-- Facebook JavaScript SDK -->
+  <div id="fb-root"></div>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0"></script>
+
   <!-- Top Utility Bar -->
   <aside class="top-bar" aria-label="Utility navigation">
     <div class="container top-bar-inner">
@@ -773,7 +777,7 @@ function renderLayout({
                 var isReel = clean.includes('/reel/') || clean.includes('/share/r/');
                 heroIframe.src = isReel
                   ? 'https://www.facebook.com/plugins/post.php?href=' + encodeURIComponent(clean) + '&show_text=false&width=780'
-                  : 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(clean) + '&show_text=false&autoplay=true&mute=1&width=780';
+                  : 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(clean) + '&show_text=false&autoplay=true&muted=true&mute=true&width=780';
               }
             })
             .catch(function() {});
