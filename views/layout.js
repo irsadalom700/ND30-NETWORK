@@ -486,16 +486,39 @@ function renderLayout({
   <!-- Frontend Facebook Video Lightbox Player Modal -->
   <div id="frontendVideoModal" class="video-lightbox-overlay" onclick="handleVideoModalBackdropClick(event)">
     <div class="video-lightbox-container" role="dialog" aria-modal="true" aria-labelledby="modalVideoTitle">
+      <!-- Modal Header -->
       <div class="video-lightbox-header">
         <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; margin-right:12px;">
-          <span style="background:#dc2626; color:#fff; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:4px; flex-shrink:0;">▶ VIDEO</span>
-          <h3 id="modalVideoTitle" class="video-lightbox-title">ND30 Video</h3>
+          <span id="modalVideoBadge" style="background:#dc2626; color:#fff; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:4px; flex-shrink:0;">▶ VIDEO</span>
+          <h3 id="modalVideoTitle" class="video-lightbox-title">ND30 Video Coverage</h3>
         </div>
         <button type="button" class="video-lightbox-close" onclick="closeFrontendVideoModal()" title="Close Video (Esc)">&times;</button>
       </div>
-      <div class="video-lightbox-body">
+
+      <!-- Quick Action Bar: Direct Watch on Facebook + Player Mode Switch -->
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:10px 18px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <a id="modalFbDirectLinkTop" href="#" target="_blank" rel="noopener noreferrer" style="background:#1877F2; color:#fff; font-weight:700; text-decoration:none; padding:7px 15px; border-radius:6px; display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; box-shadow:0 2px 10px rgba(24,119,242,0.45); transition:background 0.2s ease;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          <span>▶ Watch Directly on Facebook ↗</span>
+        </a>
+
+        <button id="modalSwitchPlayerBtn" type="button" onclick="toggleFrontendVideoPlayerMode()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.22); color:#e2e8f0; font-size:0.75rem; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px;" title="Switch embed format if video shows unavailable">
+          <span>🔄</span> <span id="modalSwitchPlayerText">Switch to Post Embed</span>
+        </button>
+      </div>
+
+      <!-- Video Player Body -->
+      <div class="video-lightbox-body" style="background:#000;">
         <iframe id="frontendVideoIframe" src="about:blank" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" scrolling="no"></iframe>
       </div>
+
+      <!-- Playback helper hint banner -->
+      <div style="padding:8px 18px; background:#0b1120; border-top:1px solid rgba(255,255,255,0.06); font-size:0.78rem; color:#94a3b8; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <span>💡 If Facebook shows <em>"Video unavailable"</em> due to privacy or login rules, click <strong>Watch Directly on Facebook</strong> above.</span>
+        <a id="modalFbDirectLinkSmall" href="#" target="_blank" rel="noopener noreferrer" style="color:#60a5fa; font-weight:700; text-decoration:none;">Open in Facebook App ↗</a>
+      </div>
+
+      <!-- Footer -->
       <div class="video-lightbox-footer">
         <a id="modalArticleLink" href="#" class="btn btn-primary btn-sm" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; text-decoration:none;">
           <span>📖</span> Read Full Story ↗
@@ -506,23 +529,91 @@ function renderLayout({
   </div>
 
   <script>
+    var currentActiveVideoState = {
+      rawUrl: '',
+      canonicalUrl: '',
+      mode: 'video', // 'video' or 'post'
+      articleUrl: '',
+      title: ''
+    };
+
+    function buildFbEmbedSrc(url, mode) {
+      if (!url) return 'about:blank';
+      var clean = url.replace('m.facebook.com', 'www.facebook.com');
+      var isReel = clean.includes('/reel/') || clean.includes('/share/r/');
+      // For reels or forced 'post' mode, use plugins/post.php
+      if (mode === 'post' || isReel) {
+        return 'https://www.facebook.com/plugins/post.php?href=' + encodeURIComponent(clean) + '&show_text=false&width=780';
+      }
+      return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(clean) + '&show_text=false&autoplay=true&width=780';
+    }
+
     function openFrontendVideoModal(videoUrl, title, articleUrl) {
       if (!videoUrl) return;
       var modal = document.getElementById('frontendVideoModal');
       var iframe = document.getElementById('frontendVideoIframe');
       var titleEl = document.getElementById('modalVideoTitle');
       var linkEl = document.getElementById('modalArticleLink');
+      var fbTopBtn = document.getElementById('modalFbDirectLinkTop');
+      var fbSmallLink = document.getElementById('modalFbDirectLinkSmall');
+      var badgeEl = document.getElementById('modalVideoBadge');
+      var switchText = document.getElementById('modalSwitchPlayerText');
 
-      if (titleEl) titleEl.innerText = title || 'ND30 Video Coverage';
-      if (linkEl) linkEl.href = articleUrl || '#';
+      var isReel = videoUrl.includes('/reel/') || videoUrl.includes('/share/r/');
+      currentActiveVideoState = {
+        rawUrl: videoUrl,
+        canonicalUrl: videoUrl,
+        mode: isReel ? 'post' : 'video',
+        articleUrl: articleUrl || '#',
+        title: title || 'ND30 Video Coverage'
+      };
 
-      // Load Facebook video with autoplay enabled
-      var embedSrc = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(videoUrl) + '&show_text=false&autoplay=true&width=780';
-      if (iframe) iframe.src = embedSrc;
+      if (titleEl) titleEl.innerText = currentActiveVideoState.title;
+      if (linkEl) linkEl.href = currentActiveVideoState.articleUrl;
+      if (fbTopBtn) fbTopBtn.href = videoUrl;
+      if (fbSmallLink) fbSmallLink.href = videoUrl;
+      if (badgeEl) badgeEl.innerText = isReel ? '▶ REEL' : '▶ VIDEO';
+      if (switchText) switchText.innerText = (currentActiveVideoState.mode === 'post') ? 'Switch to Video Player' : 'Switch to Post Embed';
+
+      // Load initial embed
+      if (iframe) {
+        iframe.src = buildFbEmbedSrc(videoUrl, currentActiveVideoState.mode);
+      }
 
       if (modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+      }
+
+      // If URL is a share redirect, mobile link, or not yet canonicalized, resolve in background
+      if (videoUrl.includes('/share/') || videoUrl.includes('fb.watch') || videoUrl.includes('m.facebook.com') || !videoUrl.includes('watch/?v=')) {
+        fetch('/api/facebook/resolve-video?url=' + encodeURIComponent(videoUrl))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data && data.success && data.canonicalUrl && data.canonicalUrl !== currentActiveVideoState.rawUrl) {
+              currentActiveVideoState.canonicalUrl = data.canonicalUrl;
+              if (fbTopBtn) fbTopBtn.href = data.canonicalUrl;
+              if (fbSmallLink) fbSmallLink.href = data.canonicalUrl;
+              // If previously was share/v or share/r, reload iframe with clean canonical URL
+              if (currentActiveVideoState.rawUrl.includes('/share/') || currentActiveVideoState.rawUrl.includes('fb.watch')) {
+                if (iframe) iframe.src = buildFbEmbedSrc(data.canonicalUrl, currentActiveVideoState.mode);
+              }
+            }
+          })
+          .catch(function() {});
+      }
+    }
+
+    function toggleFrontendVideoPlayerMode() {
+      var iframe = document.getElementById('frontendVideoIframe');
+      var switchText = document.getElementById('modalSwitchPlayerText');
+      currentActiveVideoState.mode = (currentActiveVideoState.mode === 'video') ? 'post' : 'video';
+      if (switchText) {
+        switchText.innerText = (currentActiveVideoState.mode === 'post') ? 'Switch to Video Player' : 'Switch to Post Embed';
+      }
+      var targetUrl = currentActiveVideoState.canonicalUrl || currentActiveVideoState.rawUrl;
+      if (iframe) {
+        iframe.src = buildFbEmbedSrc(targetUrl, currentActiveVideoState.mode);
       }
     }
 

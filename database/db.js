@@ -317,6 +317,25 @@ function initDatabase() {
   // Ensure dynamic columns exist for article_translations
   try { db.exec('ALTER TABLE article_translations ADD COLUMN video_url TEXT'); } catch(e) {}
 
+  // Auto-heal existing Facebook video URLs in article_translations and imported posts
+  try {
+    const transRows = db.prepare("SELECT id, video_url FROM article_translations WHERE video_url IS NOT NULL AND (video_url LIKE '%m.facebook.com%' OR video_url LIKE '%mibextid%' OR video_url LIKE '%fbclid%')").all();
+    for (const r of transRows) {
+      if (r.video_url) {
+        let clean = r.video_url.replace('m.facebook.com', 'www.facebook.com');
+        try {
+          const u = new URL(clean);
+          if (u.searchParams.has('v')) {
+            clean = `${u.origin}${u.pathname}?v=${u.searchParams.get('v')}`;
+          } else {
+            clean = `${u.origin}${u.pathname}`;
+          }
+          db.prepare('UPDATE article_translations SET video_url = ? WHERE id = ?').run(clean, r.id);
+        } catch(e) {}
+      }
+    }
+  } catch(e) {}
+
   // Ensure dynamic columns exist for reporter_applications
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_code TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_qr TEXT'); } catch(e) {}

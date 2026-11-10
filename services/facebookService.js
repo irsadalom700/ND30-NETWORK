@@ -62,7 +62,7 @@ function extractFacebookUrlInfo(rawUrl) {
 
   try {
     const parsed = new URL(clean);
-    const host = parsed.hostname.toLowerCase();
+    let host = parsed.hostname.toLowerCase();
     if (!host.includes('facebook.com') && !host.includes('fb.watch') && !host.includes('fb.com')) {
       return null;
     }
@@ -129,14 +129,21 @@ function extractFacebookUrlInfo(rawUrl) {
       postId = 'fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
     }
 
-    let cleanUrl = parsed.origin + parsed.pathname;
+    // Build canonical clean URL (converting mobile domains to www.facebook.com)
+    let cleanOrigin = 'https://www.facebook.com';
+    let cleanUrl = cleanOrigin + parsed.pathname;
+
     if (parsed.searchParams.has('v')) {
-      cleanUrl += '?v=' + parsed.searchParams.get('v');
+      cleanUrl = `${cleanOrigin}/watch/?v=${parsed.searchParams.get('v')}`;
+    } else if (mediaType === 'video' && /^\d+$/.test(String(postId))) {
+      cleanUrl = `${cleanOrigin}/watch/?v=${postId}`;
+    } else if (mediaType === 'reel' && /^\d+$/.test(String(postId))) {
+      cleanUrl = `${cleanOrigin}/reel/${postId}/`;
     } else if (parsed.searchParams.has('story_fbid')) {
-      cleanUrl += '?story_fbid=' + parsed.searchParams.get('story_fbid');
+      cleanUrl = `${cleanOrigin}/permalink.php?story_fbid=${parsed.searchParams.get('story_fbid')}`;
       if (parsed.searchParams.has('id')) cleanUrl += '&id=' + parsed.searchParams.get('id');
     } else if (parsed.searchParams.has('fbid')) {
-      cleanUrl += '?fbid=' + parsed.searchParams.get('fbid');
+      cleanUrl = `${cleanOrigin}/permalink.php?fbid=${parsed.searchParams.get('fbid')}`;
     }
 
     return {
@@ -156,9 +163,11 @@ function extractFacebookUrlInfo(rawUrl) {
 async function fetchFacebookPostMetadata(url, mediaType = 'post') {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4500);
+    const timeout = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
       signal: controller.signal,
       headers: {
         'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
@@ -169,6 +178,33 @@ async function fetchFacebookPostMetadata(url, mediaType = 'post') {
     clearTimeout(timeout);
 
     const html = await res.text();
+    const finalUrl = res.url || url;
+
+    // Check og:url and canonical link
+    const ogUrlMatch = html.match(/<meta\s+property=["']og:url["']\s+content=["']([^"']+)["']/i);
+    const ogUrl = ogUrlMatch ? decodeHtmlEntities(ogUrlMatch[1]) : '';
+    const canonicalMatch = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/i);
+    const canonicalLink = canonicalMatch ? decodeHtmlEntities(canonicalMatch[1]) : '';
+
+    // Check video_id or watch in html
+    const videoIdMatch = html.match(/"video_id":\s*"?(\d+)"?/i) 
+      || html.match(/"id":\s*"(\d+)"/i) 
+      || html.match(/watch\/\?v=(\d+)/i) 
+      || html.match(/\/videos\/(\d+)/i);
+    const resolvedVideoId = videoIdMatch ? videoIdMatch[1] : null;
+
+    let resolvedCanonicalUrl = ogUrl || canonicalLink || finalUrl;
+    let resolvedMediaType = mediaType;
+
+    if (resolvedCanonicalUrl.includes('/reel/') || url.includes('/reel/') || url.includes('/share/r/')) {
+      resolvedMediaType = 'reel';
+    } else if (resolvedCanonicalUrl.includes('/videos/') || resolvedCanonicalUrl.includes('/watch') || resolvedVideoId || mediaType === 'video') {
+      resolvedMediaType = 'video';
+    }
+
+    if (resolvedMediaType === 'video' && resolvedVideoId && /^\d+$/.test(resolvedVideoId)) {
+      resolvedCanonicalUrl = `https://www.facebook.com/watch/?v=${resolvedVideoId}`;
+    }
 
     const ogTitleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
     const ogDescMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
@@ -193,7 +229,9 @@ async function fetchFacebookPostMetadata(url, mediaType = 'post') {
       title,
       description: desc,
       image,
-      mediaType
+      mediaType: resolvedMediaType,
+      canonicalUrl: resolvedCanonicalUrl,
+      videoId: resolvedVideoId
     };
   } catch (e) {
     // If request fails or times out, return clean fallback
@@ -201,9 +239,48 @@ async function fetchFacebookPostMetadata(url, mediaType = 'post') {
       title: '',
       description: '',
       image: null,
-      mediaType
+      mediaType,
+      canonicalUrl: url,
+      videoId: null
     };
   }
+}
+
+/**
+ * Resolve Facebook URL (Follows redirects, finds video ID, canonicalizes)
+ */
+async function resolveFacebookUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const urlInfo = extractFacebookUrlInfo(rawUrl);
+  if (!urlInfo) return null;
+
+  let canonicalUrl = urlInfo.cleanUrl;
+  let mediaType = urlInfo.mediaType;
+  let videoId = /^\d+$/.test(urlInfo.postId) ? urlInfo.postId : null;
+
+  if (rawUrl.includes('/share/') || rawUrl.includes('fb.watch') || rawUrl.includes('m.facebook.com') || !videoId) {
+    const meta = await fetchFacebookPostMetadata(urlInfo.cleanUrl, urlInfo.mediaType);
+    if (meta.canonicalUrl) canonicalUrl = meta.canonicalUrl;
+    if (meta.mediaType) mediaType = meta.mediaType;
+    if (meta.videoId) videoId = meta.videoId;
+  }
+
+  const cleanCanonical = canonicalUrl || urlInfo.cleanUrl;
+  const isReel = mediaType === 'reel' || cleanCanonical.includes('/reel/');
+  const embedVideoUrl = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanCanonical)}&show_text=false&autoplay=true&width=780`;
+  const embedPostUrl = `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(cleanCanonical)}&show_text=false&width=780`;
+
+  return {
+    success: true,
+    inputUrl: rawUrl,
+    canonicalUrl: cleanCanonical,
+    mediaType: isReel ? 'reel' : mediaType,
+    videoId,
+    embedVideoUrl,
+    embedPostUrl,
+    defaultEmbedUrl: isReel ? embedPostUrl : embedVideoUrl,
+    directUrl: cleanCanonical
+  };
 }
 
 /**
@@ -260,8 +337,12 @@ async function importSingleFacebookLink({
     suggestedLang = detection.isCertain ? detection.language : 'as';
   }
 
+  const canonicalPostUrl = meta.canonicalUrl || urlInfo.cleanUrl;
+  const canonicalMediaType = meta.mediaType || urlInfo.mediaType;
+  const canonicalPostId = (meta.videoId && /^\d+$/.test(meta.videoId)) ? meta.videoId : urlInfo.postId;
+
   // 4. Check if post already exists in database
-  const existing = db.prepare('SELECT id, status, fb_post_id FROM facebook_imported_posts WHERE fb_post_id = ? OR post_url = ?').get(urlInfo.postId, urlInfo.cleanUrl);
+  const existing = db.prepare('SELECT id, status, fb_post_id FROM facebook_imported_posts WHERE fb_post_id = ? OR fb_post_id = ? OR post_url = ? OR post_url = ?').get(urlInfo.postId, canonicalPostId, urlInfo.cleanUrl, canonicalPostUrl);
   if (existing) {
     return {
       success: true,
@@ -283,13 +364,13 @@ async function importSingleFacebookLink({
   `);
 
   const effectivePageId = pageId || 'manual_import';
-  const notes = `Manually imported ${urlInfo.mediaType}: ${urlInfo.cleanUrl}`;
+  const notes = `Manually imported ${canonicalMediaType}: ${canonicalPostUrl}`;
 
   let postStatus = autoDraft ? 'imported_draft' : 'pending_review';
   let assignedLang = autoDraft ? suggestedLang : null;
 
   const result = insertStmt.run(
-    urlInfo.postId,
+    canonicalPostId,
     effectivePageId,
     `${finalHeadline}\n\n${finalContent}`,
     imageUrl,
@@ -301,8 +382,8 @@ async function importSingleFacebookLink({
     postStatus,
     null,
     notes,
-    urlInfo.cleanUrl,
-    urlInfo.mediaType
+    canonicalPostUrl,
+    canonicalMediaType
   );
 
   const importedId = result.lastInsertRowid;
@@ -313,9 +394,9 @@ async function importSingleFacebookLink({
     return {
       success: true,
       id: importedId,
-      postId: urlInfo.postId,
-      url: urlInfo.cleanUrl,
-      mediaType: urlInfo.mediaType,
+      postId: canonicalPostId,
+      url: canonicalPostUrl,
+      mediaType: canonicalMediaType,
       status: 'imported_draft',
       clusterId: approval.clusterId,
       language: suggestedLang,
@@ -326,9 +407,9 @@ async function importSingleFacebookLink({
   return {
     success: true,
     id: importedId,
-    postId: urlInfo.postId,
-    url: urlInfo.cleanUrl,
-    mediaType: urlInfo.mediaType,
+    postId: canonicalPostId,
+    url: canonicalPostUrl,
+    mediaType: canonicalMediaType,
     status: 'pending_review',
     headline: finalHeadline,
     detectedLang,
@@ -683,21 +764,35 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
 
   const cat = db.prepare('SELECT id, slug FROM categories WHERE lang_code = ? LIMIT 1').get(lang);
 
-  // If this post is a video or reel and has a valid post_url, embed the Facebook video player!
+  // If this post is a video or reel and has a valid post_url, embed the Facebook video/reel player!
   let videoEmbedHtml = '';
-  if ((post.media_type === 'video' || post.media_type === 'reel') && post.post_url) {
+  const isReel = post.media_type === 'reel' || (post.post_url && (post.post_url.includes('/reel/') || post.post_url.includes('/share/r/')));
+  const isVideo = post.media_type === 'video' || isReel;
+
+  if (isVideo && post.post_url) {
+    const cleanEmbedHref = encodeURIComponent(post.post_url.replace('m.facebook.com', 'www.facebook.com'));
+    const embedSrc = isReel
+      ? `https://www.facebook.com/plugins/post.php?href=${cleanEmbedHref}&show_text=false&width=780`
+      : `https://www.facebook.com/plugins/video.php?href=${cleanEmbedHref}&show_text=false&autoplay=true&width=780`;
+
     videoEmbedHtml = `
-      <div class="fb-video-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; margin:20px 0; border-radius:10px; background:#000; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-        <iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(post.post_url)}&show_text=false&width=560" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; overflow:hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+      <div class="fb-video-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; margin:20px 0 6px 0; border-radius:10px 10px 0 0; background:#000; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+        <iframe src="${embedSrc}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; overflow:hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+      </div>
+      <div class="fb-video-action-bar" style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px 16px; border-radius:0 0 10px 10px; margin-bottom:20px; font-size:0.84rem; flex-wrap:wrap; gap:8px;">
+        <span style="color:#94a3b8;">Having trouble playing?</span>
+        <a href="${escapeHtml(post.post_url)}" target="_blank" rel="noopener noreferrer" style="background:#1877F2; color:#fff; font-weight:700; text-decoration:none; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; box-shadow:0 2px 8px rgba(24,119,242,0.4);">
+          <span>▶ Watch Directly on Facebook ↗</span>
+        </a>
       </div>
     `;
   }
 
   let sourceLinkHtml = '';
-  if (post.post_url) {
+  if (post.post_url && !isVideo) {
     sourceLinkHtml = `
       <p style="font-size:0.85rem; color:#94a3b8; margin-top:16px;">
-        <em>Source: <a href="${escapeHtml(post.post_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; font-weight:600;">View original Facebook ${post.media_type === 'video' ? 'Video' : (post.media_type === 'reel' ? 'Reel' : 'Post')} ↗</a></em>
+        <em>Source: <a href="${escapeHtml(post.post_url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; font-weight:600;">View original Facebook Post ↗</a></em>
       </p>
     `;
   }
@@ -782,6 +877,7 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
 module.exports = {
   extractFacebookUrlInfo,
   fetchFacebookPostMetadata,
+  resolveFacebookUrl,
   importSingleFacebookLink,
   importMultipleFacebookLinks,
   syncFacebookPage,

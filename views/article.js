@@ -11,7 +11,7 @@ function getArticleVideoUrl(art) {
   if (!art) return null;
   if (art.video_url) return art.video_url;
   if (!art.content) return null;
-  const m = art.content.match(/facebook\.com\/plugins\/video\.php\?href=([^"&]+)/i);
+  const m = art.content.match(/facebook\.com\/plugins\/(?:video|post)\.php\?href=([^"&]+)/i);
   if (m) {
     try { return decodeURIComponent(m[1]); } catch(e) { return m[1]; }
   }
@@ -177,11 +177,17 @@ function renderArticlePage({ translation, allTranslationsForStory, relatedArticl
         ${heroVideoUrl ? `
         <div class="article-video-hero-player" style="margin:20px 0 26px 0; border-radius:12px; overflow:hidden; background:#000; box-shadow:0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
           <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden;">
-            <iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(heroVideoUrl)}&show_text=false&autoplay=true&width=780"
+            <iframe src="${(heroVideoUrl.includes('/reel/') || heroVideoUrl.includes('/share/r/')) ? 'https://www.facebook.com/plugins/post.php?href=' + encodeURIComponent(heroVideoUrl) + '&show_text=false&width=780' : 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(heroVideoUrl) + '&show_text=false&autoplay=true&width=780'}"
                     style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"
                     scrolling="no" frameborder="0" allowfullscreen="true"
                     allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
             </iframe>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.08); font-size:0.84rem; flex-wrap:wrap; gap:8px;">
+            <span style="color:#94a3b8;">Restricted by Facebook privacy or login rules?</span>
+            <a href="${heroVideoUrl}" target="_blank" rel="noopener noreferrer" style="background:#1877F2; color:#fff; font-weight:700; text-decoration:none; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; box-shadow:0 2px 8px rgba(24,119,242,0.45);">
+              <span>▶ Watch Directly on Facebook ↗</span>
+            </a>
           </div>
         </div>
         ` : (translation.featured_image ? `

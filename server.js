@@ -20,7 +20,8 @@ const {
   importSingleFacebookLink,
   importMultipleFacebookLinks,
   fetchFacebookPostMetadata,
-  extractFacebookUrlInfo
+  extractFacebookUrlInfo,
+  resolveFacebookUrl
 } = require('./services/facebookService');
 const {
   generateHreflangTags,
@@ -1499,13 +1500,25 @@ app.post('/api/admin/articles/save', checkModule('editor'), async (req, res) => 
 
       const pubTime = targetStatus === 'published' ? new Date().toISOString() : null;
 
+      let videoUrlToSave = data.videoUrl || null;
+      if (!videoUrlToSave && data.content) {
+        const m = data.content.match(/facebook\.com\/plugins\/(?:video|post)\.php\?href=([^"&]+)/i);
+        if (m) {
+          try { videoUrlToSave = decodeURIComponent(m[1]); } catch(e) { videoUrlToSave = m[1]; }
+        }
+      }
+      if (!videoUrlToSave && existing && existing.video_url) {
+        videoUrlToSave = existing.video_url;
+      }
+
       if (existing) {
         db.prepare(`
           UPDATE article_translations
           SET title = ?, slug = ?, summary = ?, content = ?, category_id = ?,
               tags = ?, featured_image = ?, image_caption = ?, seo_title = ?, seo_description = ?,
               status = ?, is_breaking = ?, is_featured = ?, is_trending = ?,
-              published_at = COALESCE(published_at, ?), updated_at = CURRENT_TIMESTAMP
+              published_at = COALESCE(published_at, ?), updated_at = CURRENT_TIMESTAMP,
+              video_url = COALESCE(?, video_url)
           WHERE id = ?
         `).run(
           data.title,
@@ -1523,6 +1536,7 @@ app.post('/api/admin/articles/save', checkModule('editor'), async (req, res) => 
           data.isFeatured || 0,
           data.isTrending || 0,
           pubTime,
+          videoUrlToSave,
           existing.id
         );
       } else {
@@ -1530,8 +1544,8 @@ app.post('/api/admin/articles/save', checkModule('editor'), async (req, res) => 
           INSERT INTO article_translations (
             article_id, lang_code, title, slug, summary, content, category_id,
             tags, featured_image, image_caption, seo_title, seo_description,
-            status, is_breaking, is_featured, is_trending, published_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            status, is_breaking, is_featured, is_trending, published_at, video_url
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           clusterId,
           langCode,
@@ -1549,7 +1563,8 @@ app.post('/api/admin/articles/save', checkModule('editor'), async (req, res) => 
           data.isBreaking || 0,
           data.isFeatured || 0,
           data.isTrending || 0,
-          pubTime
+          pubTime,
+          videoUrlToSave
         );
       }
 
@@ -1898,6 +1913,32 @@ app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req
     });
 
     return res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Public Facebook Video URL Resolver & Embed Helper
+app.get('/api/facebook/resolve-video', async (req, res) => {
+  try {
+    const rawUrl = req.query.url;
+    if (!rawUrl || typeof rawUrl !== 'string') {
+      return res.status(400).json({ success: false, error: 'Facebook URL parameter is required.' });
+    }
+    const resolved = await resolveFacebookUrl(rawUrl);
+    if (!resolved) {
+      return res.status(400).json({ success: false, error: 'Could not resolve Facebook video URL.' });
+    }
+
+    // Auto-heal DB records with uncanonicalized or share URLs
+    try {
+      if (resolved.canonicalUrl && resolved.canonicalUrl !== rawUrl) {
+        db.prepare('UPDATE article_translations SET video_url = ? WHERE video_url = ?').run(resolved.canonicalUrl, rawUrl);
+        db.prepare('UPDATE facebook_imported_posts SET post_url = ? WHERE post_url = ?').run(resolved.canonicalUrl, rawUrl);
+      }
+    } catch (healErr) {}
+
+    res.json(resolved);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

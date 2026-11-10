@@ -10,7 +10,7 @@ function getArticleVideoUrl(art) {
   if (!art) return null;
   if (art.video_url) return art.video_url;
   if (!art.content) return null;
-  const m = art.content.match(/facebook\.com\/plugins\/video\.php\?href=([^"&]+)/i);
+  const m = art.content.match(/facebook\.com\/plugins\/(?:video|post)\.php\?href=([^"&]+)/i);
   if (m) {
     try { return decodeURIComponent(m[1]); } catch(e) { return m[1]; }
   }
