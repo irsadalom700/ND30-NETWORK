@@ -14,7 +14,14 @@ const { db, initDatabase } = require('./database/db');
 const { detectLanguage } = require('./services/languageDetector');
 const { generateArticleTranslation } = require('./services/aiTranslator');
 const { triggerArticlePublicationEvent, handleInboundWebhook, retryFailedEvent } = require('./services/iftttService');
-const { syncFacebookPage, approveFacebookImport } = require('./services/facebookService');
+const {
+  syncFacebookPage,
+  approveFacebookImport,
+  importSingleFacebookLink,
+  importMultipleFacebookLinks,
+  fetchFacebookPostMetadata,
+  extractFacebookUrlInfo
+} = require('./services/facebookService');
 const {
   generateHreflangTags,
   generateNewsArticleJsonLd,
@@ -1832,6 +1839,65 @@ app.post('/api/admin/facebook/approve', checkModule('facebook'), async (req, res
     const { postId, targetLang, headline, content } = req.body;
     const result = await approveFacebookImport(postId, targetLang, headline, content);
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Preview Facebook Link Metadata (Title, Description, Image, Media Type)
+app.post('/api/admin/facebook/preview-link', checkModule('facebook'), async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || !url.trim()) {
+      return res.status(400).json({ success: false, error: 'Facebook URL is required.' });
+    }
+    const urlInfo = extractFacebookUrlInfo(url.trim());
+    if (!urlInfo) {
+      return res.status(400).json({ success: false, error: 'Invalid Facebook URL format. Please paste a valid Facebook post, video, reel, or watch URL.' });
+    }
+    const metadata = await fetchFacebookPostMetadata(urlInfo.cleanUrl, urlInfo.mediaType);
+    res.json({
+      success: true,
+      urlInfo,
+      metadata
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Manually Import Facebook Link(s) - Single or Bulk
+app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req, res) => {
+  try {
+    const { mode, url, links, customHeadline, customContent, defaultLang, autoDraft, pageId } = req.body;
+    
+    // Check if bulk mode is specified or links array/multiline text is provided
+    if (mode === 'bulk' || links || (url && url.includes('\n'))) {
+      const linksPayload = links || url;
+      const result = await importMultipleFacebookLinks({
+        links: linksPayload,
+        defaultLang: defaultLang || 'auto',
+        autoDraft: !!autoDraft,
+        pageId: pageId || null
+      });
+      return res.json(result);
+    }
+
+    // Single link mode
+    if (!url || !url.trim()) {
+      return res.status(400).json({ success: false, error: 'Facebook URL is required.' });
+    }
+
+    const result = await importSingleFacebookLink({
+      url: url.trim(),
+      customHeadline: customHeadline ? customHeadline.trim() : '',
+      customContent: customContent ? customContent.trim() : '',
+      targetLang: defaultLang || 'auto',
+      autoDraft: !!autoDraft,
+      pageId: pageId || null
+    });
+
+    return res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -310,6 +310,10 @@ function initDatabase() {
   try { db.exec('ALTER TABLE facebook_pages ADD COLUMN page_url TEXT'); } catch(e) {}
   try { db.exec("ALTER TABLE facebook_pages ADD COLUMN page_type TEXT DEFAULT 'page'"); } catch(e) {}
 
+  // Ensure dynamic columns exist for facebook_imported_posts
+  try { db.exec('ALTER TABLE facebook_imported_posts ADD COLUMN post_url TEXT'); } catch(e) {}
+  try { db.exec("ALTER TABLE facebook_imported_posts ADD COLUMN media_type TEXT DEFAULT 'post'"); } catch(e) {}
+
   // Ensure dynamic columns exist for reporter_applications
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_code TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE reporter_applications ADD COLUMN press_id_qr TEXT'); } catch(e) {}

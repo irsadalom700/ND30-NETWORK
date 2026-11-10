@@ -632,13 +632,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.btn-review-fb-post').forEach(btn => {
     btn.addEventListener('click', () => {
       const postId = btn.getAttribute('data-post-id');
-      const message = btn.getAttribute('data-message');
+      const message = btn.getAttribute('data-message') || '';
       const suggestedLang = btn.getAttribute('data-suggested-lang') || 'as';
+      const postUrl = btn.getAttribute('data-post-url') || '';
+      const mediaType = btn.getAttribute('data-media-type') || 'post';
 
       document.getElementById('fbReviewPostId').value = postId;
       document.getElementById('fbReviewContent').value = message;
       document.getElementById('fbReviewLang').value = suggestedLang;
       document.getElementById('fbReviewHeadline').value = message.split('\n')[0].slice(0, 100);
+
+      const sourceLinkWrapper = document.getElementById('fbReviewSourceLinkWrapper');
+      const sourceLink = document.getElementById('fbReviewSourceLink');
+      const mediaBadge = document.getElementById('fbReviewMediaTypeBadge');
+
+      if (sourceLinkWrapper && sourceLink) {
+        if (postUrl) {
+          sourceLinkWrapper.style.display = 'flex';
+          sourceLink.href = postUrl;
+          if (mediaBadge) {
+            mediaBadge.innerText = (mediaType.toUpperCase() + ' LINK');
+          }
+        } else {
+          sourceLinkWrapper.style.display = 'none';
+        }
+      }
 
       reviewModal.classList.add('active');
     });
@@ -667,6 +685,244 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (e) {
         alert('Network error: ' + e.message);
+      }
+    });
+  }
+
+  // ==========================================
+  // MANUAL FACEBOOK LINK(S) IMPORT MODAL
+  // ==========================================
+  const addLinksModal = document.getElementById('fbAddLinksModal');
+  const openAddFbLinksModalBtn = document.getElementById('openAddFbLinksModalBtn');
+  const closeAddFbLinksModalBtn = document.getElementById('closeAddFbLinksModalBtn');
+
+  if (openAddFbLinksModalBtn && addLinksModal) {
+    openAddFbLinksModalBtn.addEventListener('click', () => {
+      addLinksModal.classList.add('active');
+    });
+  }
+
+  if (closeAddFbLinksModalBtn && addLinksModal) {
+    closeAddFbLinksModalBtn.addEventListener('click', () => {
+      addLinksModal.classList.remove('active');
+    });
+  }
+
+  // Tab Switching between Single Link and Multiple Links (Bulk)
+  const tabSingleBtn = document.getElementById('fbTabSingleBtn');
+  const tabBulkBtn = document.getElementById('fbTabBulkBtn');
+  const tabSingleContent = document.getElementById('fbTabSingleContent');
+  const tabBulkContent = document.getElementById('fbTabBulkContent');
+  const submitAddFbLinksBtn = document.getElementById('submitAddFbLinksBtn');
+  const submitAddFbLinksBtnText = document.getElementById('submitAddFbLinksBtnText');
+  let currentFbImportMode = 'single';
+
+  if (tabSingleBtn && tabBulkBtn) {
+    tabSingleBtn.addEventListener('click', () => {
+      currentFbImportMode = 'single';
+      tabSingleBtn.style.color = '#fff';
+      tabSingleBtn.style.borderBottom = '2px solid #22c55e';
+      tabBulkBtn.style.color = 'var(--admin-muted)';
+      tabBulkBtn.style.borderBottom = '2px solid transparent';
+      if (tabSingleContent) tabSingleContent.style.display = 'block';
+      if (tabBulkContent) tabBulkContent.style.display = 'none';
+      if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Import Facebook Link';
+    });
+
+    tabBulkBtn.addEventListener('click', () => {
+      currentFbImportMode = 'bulk';
+      tabBulkBtn.style.color = '#fff';
+      tabBulkBtn.style.borderBottom = '2px solid #22c55e';
+      tabSingleBtn.style.color = 'var(--admin-muted)';
+      tabSingleBtn.style.borderBottom = '2px solid transparent';
+      if (tabSingleContent) tabSingleContent.style.display = 'none';
+      if (tabBulkContent) tabBulkContent.style.display = 'block';
+      if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Import All Links (Bulk)';
+    });
+  }
+
+  // Live link detection & counter for Bulk Textarea
+  const fbBulkUrls = document.getElementById('fbBulkUrls');
+  const fbBulkCountBadge = document.getElementById('fbBulkCountBadge');
+
+  function updateBulkLinksCount() {
+    if (!fbBulkUrls || !fbBulkCountBadge) return;
+    const text = fbBulkUrls.value;
+    const lines = text.split(/[\r\n,]+/);
+    const valid = lines.filter(line => {
+      const trimmed = line.trim();
+      return trimmed && (trimmed.includes('facebook.com') || trimmed.includes('fb.watch') || trimmed.includes('fb.com'));
+    });
+    fbBulkCountBadge.innerText = `${valid.length} Links Detected`;
+    if (valid.length > 0) {
+      fbBulkCountBadge.className = 'badge badge-success';
+    } else {
+      fbBulkCountBadge.className = 'badge badge-purple';
+    }
+  }
+
+  if (fbBulkUrls) {
+    fbBulkUrls.addEventListener('input', updateBulkLinksCount);
+    fbBulkUrls.addEventListener('paste', () => setTimeout(updateBulkLinksCount, 100));
+  }
+
+  // Single Link Fetch Preview
+  const fbFetchPreviewBtn = document.getElementById('fbFetchPreviewBtn');
+  const fbSingleUrl = document.getElementById('fbSingleUrl');
+
+  if (fbFetchPreviewBtn && fbSingleUrl) {
+    fbFetchPreviewBtn.addEventListener('click', async () => {
+      const url = fbSingleUrl.value.trim();
+      if (!url) {
+        alert('Please enter a Facebook URL to preview.');
+        return;
+      }
+
+      fbFetchPreviewBtn.disabled = true;
+      fbFetchPreviewBtn.innerText = 'Fetching...';
+
+      try {
+        const res = await fetch('/api/admin/facebook/preview-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+
+        if (data.success && data.metadata) {
+          const card = document.getElementById('fbSinglePreviewCard');
+          const titleEl = document.getElementById('fbPreviewTitle');
+          const descEl = document.getElementById('fbPreviewDesc');
+          const typeBadge = document.getElementById('fbPreviewTypeBadge');
+          const postIdEl = document.getElementById('fbPreviewPostId');
+          const imgEl = document.getElementById('fbPreviewImg');
+          const iconEl = document.getElementById('fbPreviewPlaceholderIcon');
+
+          if (card) card.style.display = 'block';
+          if (titleEl) titleEl.innerText = data.metadata.title || 'Facebook Post';
+          if (descEl) descEl.innerText = data.metadata.description || 'No description preview available.';
+          if (typeBadge) typeBadge.innerText = (data.urlInfo?.mediaType || 'POST').toUpperCase();
+          if (postIdEl) postIdEl.innerText = `ID: ${data.urlInfo?.postId || ''}`;
+
+          if (data.metadata.image && imgEl) {
+            imgEl.src = data.metadata.image;
+            imgEl.style.display = 'block';
+            if (iconEl) iconEl.style.display = 'none';
+          } else {
+            if (imgEl) imgEl.style.display = 'none';
+            if (iconEl) iconEl.style.display = 'inline-block';
+          }
+
+          // Pre-fill fields if empty
+          const headlineInput = document.getElementById('fbSingleHeadline');
+          const contentInput = document.getElementById('fbSingleContent');
+          if (headlineInput && !headlineInput.value.trim() && data.metadata.title) {
+            headlineInput.value = data.metadata.title;
+          }
+          if (contentInput && !contentInput.value.trim() && data.metadata.description) {
+            contentInput.value = data.metadata.description;
+          }
+
+          showAdminToast('Metadata fetched successfully!');
+        } else {
+          alert('Could not fetch preview: ' + (data.error || 'Check that the URL is public.'));
+        }
+      } catch (err) {
+        alert('Error fetching preview: ' + err.message);
+      } finally {
+        fbFetchPreviewBtn.disabled = false;
+        fbFetchPreviewBtn.innerText = '🔍 Preview';
+      }
+    });
+  }
+
+  // Handle Form Submission for Add Facebook Links (Single & Bulk)
+  if (submitAddFbLinksBtn) {
+    submitAddFbLinksBtn.addEventListener('click', async () => {
+      submitAddFbLinksBtn.disabled = true;
+
+      try {
+        if (currentFbImportMode === 'single') {
+          const url = document.getElementById('fbSingleUrl')?.value.trim();
+          if (!url) {
+            alert('Please enter a Facebook URL.');
+            submitAddFbLinksBtn.disabled = false;
+            return;
+          }
+
+          const customHeadline = document.getElementById('fbSingleHeadline')?.value.trim() || '';
+          const customContent = document.getElementById('fbSingleContent')?.value.trim() || '';
+          const defaultLang = document.getElementById('fbSingleLang')?.value || 'auto';
+          const autoDraft = !!document.getElementById('fbSingleAutoDraft')?.checked;
+
+          if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Importing...';
+
+          const res = await fetch('/api/admin/facebook/import-links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mode: 'single',
+              url,
+              customHeadline,
+              customContent,
+              defaultLang,
+              autoDraft
+            })
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            showAdminToast(data.message || 'Facebook link imported successfully!');
+            addLinksModal?.classList.remove('active');
+            setTimeout(() => window.location.reload(), 1200);
+          } else {
+            alert('Import failed: ' + (data.error || 'Unknown error'));
+            submitAddFbLinksBtn.disabled = false;
+            if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Import Facebook Link';
+          }
+        } else {
+          // Bulk Mode
+          const rawLinks = document.getElementById('fbBulkUrls')?.value.trim();
+          if (!rawLinks) {
+            alert('Please paste at least one Facebook URL.');
+            submitAddFbLinksBtn.disabled = false;
+            return;
+          }
+
+          const defaultLang = document.getElementById('fbBulkLang')?.value || 'auto';
+          const autoDraft = !!document.getElementById('fbBulkAutoDraft')?.checked;
+
+          if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Importing Links in Bulk...';
+
+          const res = await fetch('/api/admin/facebook/import-links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mode: 'bulk',
+              links: rawLinks,
+              defaultLang,
+              autoDraft
+            })
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            showAdminToast(`Bulk Import Complete: ${data.imported || 0} imported, ${data.alreadyExisted || 0} skipped.`);
+            alert(`Bulk Import Report:\n\n• Successfully Imported: ${data.imported}\n• Already Existed: ${data.alreadyExisted}\n• Errors: ${data.failed}\n\nPage will now refresh.`);
+            addLinksModal?.classList.remove('active');
+            setTimeout(() => window.location.reload(), 800);
+          } else {
+            alert('Bulk import failed: ' + (data.error || 'Unknown error'));
+            submitAddFbLinksBtn.disabled = false;
+            if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Import All Links (Bulk)';
+          }
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+        submitAddFbLinksBtn.disabled = false;
+        if (submitAddFbLinksBtnText) {
+          submitAddFbLinksBtnText.innerText = currentFbImportMode === 'single' ? 'Import Facebook Link' : 'Import All Links (Bulk)';
+        }
       }
     });
   }

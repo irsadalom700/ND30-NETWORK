@@ -24,6 +24,9 @@ function renderFacebookDashboard() {
       </p>
     </div>
     <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button type="button" id="openAddFbLinksModalBtn" class="btn btn-success" style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:1.1rem; line-height:1;">+</span> Add Post / Video Links
+      </button>
       <button type="button" id="openConnectFbModalBtn" class="btn btn-primary" style="display:flex; align-items:center; gap:6px;">
         <span style="font-size:1.1rem; line-height:1;">+</span> Connect Facebook Page / Profile
       </button>
@@ -153,6 +156,16 @@ function renderFacebookDashboard() {
           const isLoop = post.status === 'skipped_loop';
           const isHidden = post.status === 'hidden';
 
+          const mediaType = post.media_type || 'post';
+          let mediaBadge = '<span class="badge" style="background:#4b5563; color:#fff; font-size:0.68rem; padding:2px 6px;">📝 Post</span>';
+          if (mediaType === 'video') {
+            mediaBadge = '<span class="badge" style="background:#dc2626; color:#fff; font-size:0.68rem; padding:2px 6px;">🎬 Video</span>';
+          } else if (mediaType === 'reel') {
+            mediaBadge = '<span class="badge" style="background:#e11d48; color:#fff; font-size:0.68rem; padding:2px 6px;">📱 Reel</span>';
+          } else if (mediaType === 'photo') {
+            mediaBadge = '<span class="badge" style="background:#0284c7; color:#fff; font-size:0.68rem; padding:2px 6px;">📷 Photo</span>';
+          }
+
           return `
             <tr class="fb-post-row" data-status="${post.status}" data-id="${post.id}" id="fb-row-${post.id}">
               <td style="max-width:320px;">
@@ -162,8 +175,16 @@ function renderFacebookDashboard() {
                     <div class="fb-post-text" style="font-size:0.85rem; font-weight:600; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
                       ${escapeHtml(post.message || 'No text content')}
                     </div>
-                    <div style="font-size:0.72rem; color:var(--admin-muted); margin-top:2px; font-family:monospace;">
-                      ID: ${escapeHtml(post.fb_post_id)}
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                      ${mediaBadge}
+                      <span style="font-size:0.72rem; color:var(--admin-muted); font-family:monospace;">
+                        ID: ${escapeHtml(post.fb_post_id)}
+                      </span>
+                      ${post.post_url ? `
+                        <a href="${escapeHtml(post.post_url)}" target="_blank" rel="noopener noreferrer" style="color:#58a6ff; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; gap:2px;">
+                          <span>🔗</span> FB ↗
+                        </a>
+                      ` : ''}
                     </div>
                   </div>
                 </div>
@@ -192,7 +213,9 @@ function renderFacebookDashboard() {
                     <button type="button" class="btn btn-primary btn-sm btn-review-fb-post"
                             data-post-id="${post.id}"
                             data-message="${escapeHtml(post.message)}"
-                            data-suggested-lang="${post.suggested_lang || 'as'}">
+                            data-suggested-lang="${post.suggested_lang || 'as'}"
+                            data-post-url="${escapeHtml(post.post_url || '')}"
+                            data-media-type="${escapeHtml(mediaType)}">
                       Review & Assign
                     </button>
                   ` : (post.imported_article_id ? `
@@ -313,6 +336,13 @@ function renderFacebookDashboard() {
       <div class="modal-body">
         <input type="hidden" id="fbReviewPostId">
 
+        <div id="fbReviewSourceLinkWrapper" style="display:none; margin-bottom:14px; font-size:0.8rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 12px; align-items:center; justify-content:space-between;">
+          <span style="color:var(--admin-muted);" id="fbReviewMediaTypeBadge">Original Post</span>
+          <a id="fbReviewSourceLink" href="#" target="_blank" rel="noopener noreferrer" style="color:#58a6ff; font-weight:600; text-decoration:none;">
+            <span>🔗</span> Open Original on Facebook ↗
+          </a>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Assign to Language Section *</label>
           <select id="fbReviewLang" class="form-control">
@@ -336,6 +366,159 @@ function renderFacebookDashboard() {
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('fbReviewModal').classList.remove('active')">Cancel</button>
         <button type="button" id="approveFbPostBtn" class="btn btn-success">
           ✓ Approve & Create Draft
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Facebook Links Modal (Single & Multiple Bulk Import) -->
+  <div id="fbAddLinksModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:620px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+            <span>➕</span> Add Facebook Post or Video Links
+          </h3>
+          <p style="font-size:0.78rem; color:var(--admin-muted); margin:4px 0 0 0;">
+            Manually import Facebook videos, reels, photos, or posts with intelligent script detection.
+          </p>
+        </div>
+        <button type="button" id="closeAddFbLinksModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div style="display:flex; border-bottom:1px solid var(--admin-border); padding:0 20px; background:rgba(0,0,0,0.15);">
+        <button type="button" id="fbTabSingleBtn" class="fb-tab-btn active" style="padding:12px 18px; border:none; background:none; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid #22c55e; transition:all 0.2s;">
+          🔗 Single Link
+        </button>
+        <button type="button" id="fbTabBulkBtn" class="fb-tab-btn" style="padding:12px 18px; border:none; background:none; color:var(--admin-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s;">
+          📋 Multiple Links (Bulk Import)
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:20px;">
+        <!-- TAB 1: SINGLE LINK -->
+        <div id="fbTabSingleContent">
+          <div class="form-group">
+            <label class="form-label">
+              <span>Facebook Link (Post / Video / Reel / Watch) *</span>
+            </label>
+            <div style="display:flex; gap:8px;">
+              <input type="url" id="fbSingleUrl" class="form-control" placeholder="https://www.facebook.com/watch/?v=... or /reel/... or /posts/..." required style="flex:1;">
+              <button type="button" id="fbFetchPreviewBtn" class="btn btn-secondary" style="white-space:nowrap; padding:8px 14px;">
+                🔍 Preview
+              </button>
+            </div>
+            <span style="font-size:0.75rem; color:var(--admin-muted); margin-top:4px; display:block;">
+              Supports public video, reel, photo, and standard post URLs.
+            </span>
+          </div>
+
+          <!-- Preview Card (Loaded via AJAX) -->
+          <div id="fbSinglePreviewCard" style="display:none; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; padding:12px; margin-bottom:16px;">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <div id="fbPreviewImgWrapper" style="width:70px; height:70px; border-radius:6px; background:#111; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                <img id="fbPreviewImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+                <span id="fbPreviewPlaceholderIcon" style="font-size:1.8rem;">🎬</span>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                  <span id="fbPreviewTypeBadge" class="badge badge-purple" style="font-size:0.7rem; text-transform:uppercase;">VIDEO</span>
+                  <span id="fbPreviewPostId" style="font-size:0.72rem; color:var(--admin-muted); font-family:monospace;"></span>
+                </div>
+                <div id="fbPreviewTitle" style="font-size:0.88rem; font-weight:700; color:#fff; line-height:1.3; margin-bottom:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"></div>
+                <div id="fbPreviewDesc" style="font-size:0.78rem; color:var(--admin-muted); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Story Headline (Optional – auto-scraped if empty)</label>
+            <input type="text" id="fbSingleHeadline" class="form-control" placeholder="Leave blank to use Facebook title or caption">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Story Content / Summary (Optional – auto-scraped if empty)</label>
+            <textarea id="fbSingleContent" class="form-control" rows="3" placeholder="Leave blank to use post description or video caption"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Target Language Section</label>
+            <select id="fbSingleLang" class="form-control">
+              <option value="auto">🌐 Auto-Detect Script (Assamese, Hindi, or English)</option>
+              <option value="as">Assamese – অসমীয়া (/as/)</option>
+              <option value="hi">Hindi – हिंदी (/hi/)</option>
+              <option value="en">English (/en/)</option>
+            </select>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-top:14px;">
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0;">
+              <input type="checkbox" id="fbSingleAutoDraft" style="margin-top:3px;">
+              <div>
+                <strong style="color:var(--admin-text); font-size:0.85rem; display:block;">Instant Multi-Language Drafts</strong>
+                <span style="font-size:0.75rem; color:var(--admin-muted); display:block; margin-top:2px;">
+                  Automatically generate drafts across Assamese, Hindi, and English (embeds video player automatically). Uncheck to keep in Review Queue first.
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- TAB 2: MULTIPLE LINKS (BULK IMPORT) -->
+        <div id="fbTabBulkContent" style="display:none;">
+          <div style="background:rgba(88,166,255,0.08); border:1px solid rgba(88,166,255,0.2); border-radius:8px; padding:12px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span style="font-size:1.1rem;">⚡</span>
+              <strong style="font-size:0.88rem; color:#58a6ff;">Bulk Facebook Ingest Engine</strong>
+            </div>
+            <p style="font-size:0.78rem; color:var(--admin-muted); margin:0;">
+              Paste multiple Facebook video or post links below (one per line, or comma-separated). The engine extracts video IDs, scrapes preview data, detects languages, and prevents duplicate ingestion automatically.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Paste Facebook URLs (One URL per line) *</span>
+              <span id="fbBulkCountBadge" class="badge badge-purple" style="font-size:0.75rem; padding:3px 8px;">0 Links Detected</span>
+            </label>
+            <textarea id="fbBulkUrls" class="form-control" rows="7" placeholder="https://www.facebook.com/watch/?v=123456789
+https://www.facebook.com/reel/987654321
+https://www.facebook.com/nd30live/posts/101584729182
+https://fb.watch/xyz123abc/"></textarea>
+            <span style="font-size:0.75rem; color:var(--admin-muted); margin-top:4px; display:block;">
+              You can paste a single link or dozens of links at once. Supports all Facebook desktop and mobile formats.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Default Language Section</label>
+            <select id="fbBulkLang" class="form-control">
+              <option value="auto">🌐 Auto-Detect Script for Each Post</option>
+              <option value="as">Assamese – অসমীয়া (/as/)</option>
+              <option value="hi">Hindi – हिंदी (/hi/)</option>
+              <option value="en">English (/en/)</option>
+            </select>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-top:14px;">
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0;">
+              <input type="checkbox" id="fbBulkAutoDraft" style="margin-top:3px;">
+              <div>
+                <strong style="color:var(--admin-text); font-size:0.85rem; display:block;">Instant Multi-Language Drafts</strong>
+                <span style="font-size:0.75rem; color:var(--admin-muted); display:block; margin-top:2px;">
+                  Bypass the review queue and immediately generate 3-language drafts with responsive video embeds for all valid links.
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:14px 20px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('fbAddLinksModal').classList.remove('active')">Cancel</button>
+        <button type="button" id="submitAddFbLinksBtn" class="btn btn-success" style="display:flex; align-items:center; gap:6px;">
+          <span>🚀</span> <span id="submitAddFbLinksBtnText">Import Facebook Link</span>
         </button>
       </div>
     </div>
