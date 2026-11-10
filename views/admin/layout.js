@@ -160,7 +160,7 @@ function renderAdminLayout({ title, activeNav = 'dashboard', content, currentUse
     </main>
   </div>
 
-  <script src="/js/admin.js"></script>
+  <script src="/js/admin.js?v=20261111_02"></script>
 </body>
 </html>`;
 }

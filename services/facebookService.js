@@ -48,8 +48,16 @@ function escapeHtml(str) {
  */
 function extractFacebookUrlInfo(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') return null;
-  const clean = rawUrl.trim();
-  if (!clean.startsWith('http://') && !clean.startsWith('https://')) return null;
+  let clean = rawUrl.trim();
+
+  // Extract URL if surrounded by other text
+  const match = clean.match(/(https?:\/\/[^\s"'<>]+|facebook\.com\/[^\s"'<>]+|fb\.watch\/[^\s"'<>]+|fb\.com\/[^\s"'<>]+)/i);
+  if (match) {
+    clean = match[1];
+  }
+  if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+    clean = 'https://' + clean;
+  }
 
   try {
     const parsed = new URL(clean);
@@ -71,7 +79,7 @@ function extractFacebookUrlInfo(rawUrl) {
     // 2. watch/?v=123 (Facebook Watch videos)
     else if (pathname.includes('/watch')) {
       mediaType = 'video';
-      postId = parsed.searchParams.get('v') || pathname.split('/').filter(Boolean).pop();
+      postId = parsed.searchParams.get('v') || parsed.searchParams.get('video_id') || pathname.split('/').filter(Boolean).pop();
     }
     // 3. /videos/123 (Direct Page Video)
     else if (pathname.includes('/videos/')) {
@@ -96,7 +104,7 @@ function extractFacebookUrlInfo(rawUrl) {
       mediaType = 'photo';
       postId = parsed.searchParams.get('fbid') || pathname.split('/').filter(Boolean).pop();
     }
-    // 7. permalink.php?story_fbid=123
+    // 7. permalink.php?story_fbid=123 or story.php
     else if (parsed.searchParams.has('story_fbid')) {
       mediaType = 'post';
       postId = parsed.searchParams.get('story_fbid');
@@ -111,17 +119,30 @@ function extractFacebookUrlInfo(rawUrl) {
       postId = 'fbr_' + pathname.split('/').filter(Boolean).pop();
     }
     else {
-      postId = pathname.split('/').filter(Boolean).pop() || `fb_${Date.now()}`;
+      const last = pathname.split('/').filter(Boolean).pop();
+      postId = last || `fb_${Date.now()}`;
     }
 
-    // Clean tracking query params
-    const cleanUrl = parsed.origin + parsed.pathname + (parsed.searchParams.has('v') ? '?v=' + parsed.searchParams.get('v') : '');
+    const reserved = ['watch', 'videos', 'posts', 'reel', 'reels', 'photos', 'photo', 'share', 'groups', 'pages', 'story.php', 'permalink.php'];
+    if (!postId || reserved.includes(String(postId).toLowerCase())) {
+      postId = 'fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    }
+
+    let cleanUrl = parsed.origin + parsed.pathname;
+    if (parsed.searchParams.has('v')) {
+      cleanUrl += '?v=' + parsed.searchParams.get('v');
+    } else if (parsed.searchParams.has('story_fbid')) {
+      cleanUrl += '?story_fbid=' + parsed.searchParams.get('story_fbid');
+      if (parsed.searchParams.has('id')) cleanUrl += '&id=' + parsed.searchParams.get('id');
+    } else if (parsed.searchParams.has('fbid')) {
+      cleanUrl += '?fbid=' + parsed.searchParams.get('fbid');
+    }
 
     return {
       originalUrl: clean,
       cleanUrl,
       mediaType,
-      postId: String(postId || `fb_${Date.now()}`).replace(/[^\w_-]/g, '')
+      postId: String(postId).replace(/[^\w_-]/g, '')
     };
   } catch (e) {
     return null;

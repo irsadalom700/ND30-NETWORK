@@ -1965,6 +1965,33 @@ app.post('/api/admin/facebook/posts/delete', checkModule('facebook'), (req, res)
   }
 });
 
+// Bulk Delete Multiple Facebook Imported Posts
+app.post('/api/admin/facebook/posts/bulk-delete', checkModule('facebook'), (req, res) => {
+  try {
+    const { postIds } = req.body;
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'No posts selected for deletion.' });
+    }
+
+    const validIds = postIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id) && id > 0);
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'Invalid post IDs provided.' });
+    }
+
+    const placeholders = validIds.map(() => '?').join(',');
+    const result = db.prepare(`DELETE FROM facebook_imported_posts WHERE id IN (${placeholders})`).run(...validIds);
+
+    res.json({
+      success: true,
+      count: result.changes,
+      deletedIds: validIds,
+      message: `Successfully deleted ${result.changes} post(s).`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Save Google AdSense Unit
 app.post('/api/admin/adsense/save', checkModule('adsense'), (req, res) => {
   try {
