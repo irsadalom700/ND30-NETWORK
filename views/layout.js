@@ -454,18 +454,51 @@ function renderLayout({
   <!-- Category Sticky Navigation -->
   <nav class="category-nav-bar" aria-label="Main Navigation">
     <div class="container category-nav-inner">
-      <ul class="nav-links">
-        <li class="nav-item ${!activeCategorySlug ? 'active' : ''}">
-          <a href="/${currentLang}/">
-            ${currentLang === 'as' ? 'মুখ্য পৃষ্ঠা' : (currentLang === 'hi' ? 'मुख्य पृष्ठ' : 'Home')}
-          </a>
-        </li>
-        ${categories.map(c => `
-          <li class="nav-item ${activeCategorySlug === c.slug ? 'active' : ''}">
-            <a href="/${currentLang}/${c.slug}">${c.name}</a>
-          </li>
-        `).join('')}
-      </ul>
+      <!-- Main Navigation Menu (Home, News, Podcast, Technology, Entertainment) -->
+      ${(() => {
+        const menuItems = [
+          {
+            slug: '',
+            href: `/${currentLang}/`,
+            name: currentLang === 'as' ? 'মুখ্য পৃষ্ঠা' : (currentLang === 'hi' ? 'मुख्य पृष्ठ' : 'Home'),
+            isActive: !activeCategorySlug || activeCategorySlug === 'home'
+          },
+          {
+            slug: 'news',
+            href: `/${currentLang}/news`,
+            name: currentLang === 'as' ? 'বাতৰি' : (currentLang === 'hi' ? 'समाचार' : 'News'),
+            isActive: activeCategorySlug === 'news' || ['assam', 'national', 'world', 'sports'].includes(activeCategorySlug)
+          },
+          {
+            slug: 'podcast',
+            href: `/${currentLang}/podcast`,
+            name: currentLang === 'as' ? 'পডকাষ্ট' : (currentLang === 'hi' ? 'पॉडकास्ट' : 'Podcast'),
+            isActive: activeCategorySlug === 'podcast' || activeCategorySlug === 'talkshow' || activeCategorySlug === 'talk-show'
+          },
+          {
+            slug: 'technology',
+            href: `/${currentLang}/technology`,
+            name: currentLang === 'as' ? 'প্ৰযুক্তি' : (currentLang === 'hi' ? 'तकनीक' : 'Technology'),
+            isActive: activeCategorySlug === 'technology' || activeCategorySlug === 'tech'
+          },
+          {
+            slug: 'entertainment',
+            href: `/${currentLang}/entertainment`,
+            name: currentLang === 'as' ? 'বিনোদন' : (currentLang === 'hi' ? 'मनोरंजन' : 'Entertainment'),
+            isActive: activeCategorySlug === 'entertainment'
+          }
+        ];
+
+        return `
+        <ul class="nav-links">
+          ${menuItems.map(item => `
+            <li class="nav-item ${item.isActive ? 'active' : ''}">
+              <a href="${item.href}">${item.name}</a>
+            </li>
+          `).join('')}
+        </ul>
+        `;
+      })()}
 
       <div class="nav-actions">
         <!-- Highlighted Advertise With Us CTA Button -->

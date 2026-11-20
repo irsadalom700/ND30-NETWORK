@@ -124,19 +124,51 @@ function renderHomePage(lang = 'as') {
   // Primary Hero is latest post with video if available, otherwise featured/latest
   const heroPrimary = latestVideoArticle || featuredArticles[0] || latestArticles[0];
 
-  // Secondary stack excludes heroPrimary
-  const candidateSecondary = featuredArticles.filter(a => a.id !== heroPrimary?.id);
-  const heroSecondary = (candidateSecondary.length >= 3 
-    ? candidateSecondary.slice(0, 3) 
-    : latestArticles.filter(a => a.id !== heroPrimary?.id).slice(0, 3));
+  // Fetch last 3 Videos of latest Podcast or Talk shows (User-Requested Dedicated Section)
+  let podcastVideos = db.prepare(`
+    SELECT t.*, c.name as category_name, c.slug as category_slug
+    FROM article_translations t
+    LEFT JOIN categories c ON t.category_id = c.id
+    WHERE t.lang_code = ? AND t.status = 'published'
+      AND (
+        c.slug IN ('podcast', 'podcasts', 'talkshow', 'talk-show', 'talk-shows')
+        OR LOWER(t.title) LIKE '%podcast%' OR t.title LIKE '%পডকাষ্ট%' OR t.title LIKE '%पॉडकास्ट%'
+        OR LOWER(t.title) LIKE '%talk show%' OR t.title LIKE '%টক শ্ব%' OR t.title LIKE '%টকশ্ব%' OR t.title LIKE '%टॉक शो%'
+        OR LOWER(COALESCE(t.summary, '')) LIKE '%podcast%' OR LOWER(COALESCE(t.summary, '')) LIKE '%talk show%'
+        OR ((t.video_url IS NOT NULL AND t.video_url != '') OR t.content LIKE '%facebook.com/plugins%')
+      )
+      AND (t.id != ?)
+    ORDER BY 
+      CASE 
+        WHEN c.slug IN ('podcast', 'podcasts', 'talkshow', 'talk-show', 'talk-shows') THEN 1
+        WHEN LOWER(t.title) LIKE '%podcast%' OR t.title LIKE '%পডকাষ্ট%' OR t.title LIKE '%पॉडकास्ट%' OR LOWER(t.title) LIKE '%talk show%' OR t.title LIKE '%টক শ্ব%' OR t.title LIKE '%टॉक शो%' THEN 2
+        WHEN (t.video_url IS NOT NULL AND t.video_url != '') OR t.content LIKE '%facebook.com/plugins%' THEN 3
+        ELSE 4
+      END ASC,
+      t.published_at DESC
+    LIMIT 3
+  `).all(currentLang, heroPrimary?.id || 0);
 
-  const remainingArticles = latestArticles.filter(a => a.id !== heroPrimary?.id && !heroSecondary.some(s => s.id === a.id));
+  // If fewer than 3 found, pad with remaining published articles
+  if (podcastVideos.length < 3) {
+    const existingIds = new Set([heroPrimary?.id, ...podcastVideos.map(p => p.id)].filter(Boolean));
+    const backfill = latestArticles.filter(a => !existingIds.has(a.id)).slice(0, 3 - podcastVideos.length);
+    podcastVideos = [...podcastVideos, ...backfill];
+  }
+
+  const remainingArticles = latestArticles.filter(a => a.id !== heroPrimary?.id && !podcastVideos.some(s => s.id === a.id));
 
   // Section titles localized
   const titles = {
     latest: currentLang === 'as' ? 'শেহতীয়া সংবাদ' : (currentLang === 'hi' ? 'ताज़ा समाचार' : 'Latest News'),
     trending: currentLang === 'as' ? 'ট্ৰেণ্ডিং খবৰ' : (currentLang === 'hi' ? 'ट्रेंडिंग खबरें' : 'Trending Stories'),
     allStories: currentLang === 'as' ? 'সকলো বাতৰি চাওক' : (currentLang === 'hi' ? 'सभी खबरें देखें' : 'View All Stories')
+  };
+
+  const podcastMeta = {
+    title: currentLang === 'as' ? 'পডকাষ্ট আৰু টক শ্ব’' : (currentLang === 'hi' ? 'पॉडकास्ट व टॉक शो' : 'Podcast & Talk Shows'),
+    subtitle: currentLang === 'as' ? 'শেহতীয়া ৩টা ভিডিঅ’' : (currentLang === 'hi' ? 'ताज़ा 3 वीडियो' : 'Last 3 Videos'),
+    viewAll: currentLang === 'as' ? 'সকলো চাওক' : (currentLang === 'hi' ? 'सभी देखें' : 'View All')
   };
 
   return `
@@ -242,31 +274,63 @@ function renderHomePage(lang = 'as') {
       <!-- Primary Big Hero (Autoplays latest video post) -->
       ${primaryHeroHtml}
 
-      <!-- Secondary Hero Stack -->
+      <!-- Secondary Hero Stack: Section for Last 3 Videos of Podcast or Talk Shows -->
       <div class="hero-secondary-stack">
-        ${heroSecondary.map(art => {
-          const vUrl = getArticleVideoUrl(art);
-          return `
-          <article class="news-card-compact">
-            <div style="position:relative; width:120px; height:80px; flex-shrink:0; border-radius:6px; overflow:hidden;">
-              <img src="${art.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${art.title}" class="news-card-compact-img" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
-              ${renderCardPlayOverlay(vUrl, art, currentLang, true)}
+        <!-- Podcast & Talk Shows Section Header -->
+        <div class="podcast-sidebar-header">
+          <div class="podcast-sidebar-title-group">
+            <span class="podcast-mic-badge">🎙️</span>
+            <div>
+              <h3 class="podcast-sidebar-title">${podcastMeta.title}</h3>
+              <span class="podcast-sidebar-sub">${podcastMeta.subtitle}</span>
             </div>
-            <div class="news-card-compact-body">
-              <div>
-                <span class="news-card-cat">${art.category_name || 'News'}</span>
-                <h3 class="news-card-compact-title">
-                  <a href="/${currentLang}/${art.category_slug || 'news'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}">
+          </div>
+          <a href="/${currentLang}/podcast" class="podcast-sidebar-view-all">
+            ${podcastMeta.viewAll} →
+          </a>
+        </div>
+
+        <!-- 3 Podcast / Talk Show Video Episodes -->
+        <div class="podcast-videos-list">
+          ${podcastVideos.map((art, idx) => {
+            const vUrl = getArticleVideoUrl(art);
+            const escapedUrl = escapeAttr(vUrl || '');
+            const escapedTitle = escapeAttr(art.title || '');
+            const articleUrl = `/${currentLang}/${art.category_slug || 'podcast'}/${art.subcategory_slug ? art.subcategory_slug + '/' : ''}${art.slug}`;
+            const isPodcast = (art.category_slug && art.category_slug.includes('podcast')) || (art.title && /podcast|পডকাষ্ট|पॉडकास्ट/i.test(art.title));
+            const tagLabel = isPodcast ? 'PODCAST' : (vUrl ? 'TALK SHOW' : (art.category_name || 'SHOW'));
+
+            return `
+            <article class="podcast-video-card-compact">
+              <div class="podcast-thumb-container">
+                <img src="${art.featured_image || '/uploads/nd30_news_banner.jpg'}" alt="${art.title}" class="podcast-thumb-img" loading="lazy">
+                ${renderCardPlayOverlay(vUrl, art, currentLang, true)}
+                <span class="podcast-thumb-badge">▶ ${tagLabel}</span>
+              </div>
+              <div class="podcast-body-content">
+                <div class="podcast-top-meta">
+                  <span class="podcast-category-pill">🎙️ ${art.category_name || (currentLang === 'as' ? 'পডকাষ্ট' : (currentLang === 'hi' ? 'पॉडकास्ट' : 'Podcast'))}</span>
+                  <span class="podcast-ep-number">#${idx + 1}</span>
+                </div>
+                <h4 class="podcast-item-title">
+                  <a href="${articleUrl}">
                     ${art.title}
                   </a>
-                </h3>
+                </h4>
+                <div class="podcast-footer-meta">
+                  <span>🕒 ${new Date(art.published_at || art.created_at).toLocaleDateString()}</span>
+                  ${vUrl ? `
+                    <button type="button" class="podcast-quick-play-btn" onclick="openFrontendVideoModal('${escapedUrl}', '${escapedTitle}', '${articleUrl}')" title="Play Video Episode">
+                      ▶ Play
+                    </button>
+                  ` : `
+                    <a href="${articleUrl}" class="podcast-watch-link">Watch →</a>
+                  `}
+                </div>
               </div>
-              <div style="font-size:0.75rem; color:var(--text-subtle); margin-top:6px;">
-                ${new Date(art.published_at || art.created_at).toLocaleDateString()}
-              </div>
-            </div>
-          </article>
-        `;}).join('')}
+            </article>
+          `;}).join('')}
+        </div>
 
         <!-- Advertisement Photo Slider with WhatsApp Contact (Marked place requested by user) -->
         ${renderAdSliderHtml(adSlides)}

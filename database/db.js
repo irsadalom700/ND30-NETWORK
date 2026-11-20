@@ -800,29 +800,50 @@ function initDatabase() {
     `);
 
     // Assamese Categories
-    insertCat.run('as', 'অসম', 'assam', 'অসমৰ সাম্প্ৰতিক ঘটনা আৰু খবৰ', 1);
-    insertCat.run('as', 'ৰাষ্ট্ৰীয়', 'national', 'ভাৰতৰ বিভিন্ন প্ৰান্তৰ গুৰুত্বপূৰ্ণ বাতৰি', 2);
-    insertCat.run('as', 'আন্তৰ্জাতিক', 'world', 'বিশ্বৰ প্ৰেক্ষাপট আৰু বৈদেশিক ঘটনাৱলী', 3);
-    insertCat.run('as', 'খেল-ধেমালি', 'sports', 'ক্ৰীড়া জগতৰ সতেজ আপডেট', 4);
-    insertCat.run('as', 'প্ৰযুক্তি', 'tech', 'বিজ্ঞান, মহাকাশ আৰু আধুনিক প্ৰযুক্তি', 5);
-    insertCat.run('as', 'বিনোদন', 'entertainment', 'চলচ্চিত্ৰ আৰু সংস্কৃতি', 6);
+    insertCat.run('as', 'বাতৰি', 'news', 'অসম আৰু দেশ-বিদেশৰ সাম্প্ৰতিক বাতৰি', 1);
+    insertCat.run('as', 'পডকাষ্ট', 'podcast', 'এনডি৩০ পডকাষ্ট, টক শ্ব’ আৰু বিশেষ সাক্ষাৎকাৰ', 2);
+    insertCat.run('as', 'প্ৰযুক্তি', 'technology', 'বিজ্ঞান, মহাকাশ আৰু আধুনিক প্ৰযুক্তি', 3);
+    insertCat.run('as', 'বিনোদন', 'entertainment', 'চলচ্চিত্ৰ, কলা আৰু সংস্কৃতি', 4);
+    insertCat.run('as', 'অসম', 'assam', 'অসমৰ সাম্প্ৰতিক ঘটনা আৰু খবৰ', 5);
+    insertCat.run('as', 'ৰাষ্ট্ৰীয়', 'national', 'ভাৰতৰ বিভিন্ন প্ৰান্তৰ গুৰুত্বপূৰ্ণ বাতৰি', 6);
+    insertCat.run('as', 'আন্তৰ্জাতিক', 'world', 'বিশ্বৰ প্ৰেক্ষাপট আৰু বৈদেশিক ঘটনাৱলী', 7);
+    insertCat.run('as', 'খেল-ধেমালি', 'sports', 'ক্ৰীড়া জগতৰ সতেজ আপডেট', 8);
 
     // Hindi Categories
-    insertCat.run('hi', 'असम व पूर्वोत्तर', 'assam', 'असम और पूर्वोत्तर राज्यों के ताजा समाचार', 1);
-    insertCat.run('hi', 'राष्ट्रीय', 'national', 'देशभर के प्रमुख घटनाक्रम और बड़ी खबरें', 2);
-    insertCat.run('hi', 'अंतरराष्ट्रीय', 'world', 'वैश्विक परिदृश्य और अंतरराष्ट्रीय समाचार', 3);
-    insertCat.run('hi', 'खेल', 'sports', 'क्रिकेट, फुटबॉल और खेल जगत की खबरें', 4);
-    insertCat.run('hi', 'विज्ञान व तकनीक', 'tech', 'तकनीक, गैजेट्स और अंतरिक्ष मिशन', 5);
-    insertCat.run('hi', 'मनोरंजन', 'entertainment', 'सिनेमा, कला और सांस्कृतिक जगत', 6);
+    insertCat.run('hi', 'समाचार', 'news', 'असम, देश और विदेश के ताज़ा समाचार', 1);
+    insertCat.run('hi', 'पॉडकास्ट', 'podcast', 'एनडी30 पॉडकास्ट, टॉक शो और विशेष साक्षात्कार', 2);
+    insertCat.run('hi', 'तकनीक', 'technology', 'तकनीक, गैजेट्स और अंतरिक्ष मिशन', 3);
+    insertCat.run('hi', 'मनोरंजन', 'entertainment', 'सिनेमा, कला और सांस्कृतिक जगत', 4);
+    insertCat.run('hi', 'असम व पूर्वोत्तर', 'assam', 'असम और पूर्वोत्तर राज्यों के ताजा समाचार', 5);
+    insertCat.run('hi', 'राष्ट्रीय', 'national', 'देशभर के प्रमुख घटनाक्रम और बड़ी खबरें', 6);
+    insertCat.run('hi', 'अंतरराष्ट्रीय', 'world', 'वैश्विक परिदृश्य और अंतरराष्ट्रीय समाचार', 7);
+    insertCat.run('hi', 'खेल', 'sports', 'क्रिकेट, फुटबॉल और खेल जगत की खबरें', 8);
 
     // English Categories
-    insertCat.run('en', 'Assam & Northeast', 'assam', 'Latest developments and news from Assam & NE', 1);
-    insertCat.run('en', 'National', 'national', 'Key political, economic and social stories from India', 2);
-    insertCat.run('en', 'World', 'world', 'Global affairs and international diplomacy', 3);
-    insertCat.run('en', 'Sports', 'sports', 'Cricket, football, and sporting triumphs', 4);
-    insertCat.run('en', 'Technology', 'tech', 'Science, aerospace, and digital innovation', 5);
-    insertCat.run('en', 'Entertainment', 'entertainment', 'Cinema, culture, and lifestyle', 6);
+    insertCat.run('en', 'News', 'news', 'Latest breaking news from Assam, Northeast and India', 1);
+    insertCat.run('en', 'Podcast', 'podcast', 'ND30 Podcast, Talk Shows and Exclusive Interviews', 2);
+    insertCat.run('en', 'Technology', 'technology', 'Science, aerospace, gadgets and digital innovation', 3);
+    insertCat.run('en', 'Entertainment', 'entertainment', 'Cinema, culture, and lifestyle', 4);
+    insertCat.run('en', 'Assam & Northeast', 'assam', 'Latest developments and news from Assam & NE', 5);
+    insertCat.run('en', 'National', 'national', 'Key political, economic and social stories from India', 6);
+    insertCat.run('en', 'World', 'world', 'Global affairs and international diplomacy', 7);
+    insertCat.run('en', 'Sports', 'sports', 'Cricket, football, and sporting triumphs', 8);
   }
+
+  // Ensure 'news', 'podcast', 'technology' categories exist in existing databases
+  const ensureCatStmt = db.prepare(`
+    INSERT OR IGNORE INTO categories (lang_code, name, slug, description, sort_order)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  ensureCatStmt.run('as', 'বাতৰি', 'news', 'অসম আৰু দেশ-বিদেশৰ সাম্প্ৰতিক বাতৰি', 1);
+  ensureCatStmt.run('as', 'পডকাষ্ট', 'podcast', 'এনডি৩০ পডকাষ্ট, টক শ্ব’ আৰু বিশেষ সাক্ষাৎকাৰ', 2);
+  ensureCatStmt.run('as', 'প্ৰযুক্তি', 'technology', 'বিজ্ঞান, মহাকাশ আৰু আধুনিক প্ৰযুক্তি', 3);
+  ensureCatStmt.run('hi', 'समाचार', 'news', 'असम, देश और विदेश के ताज़ा समाचार', 1);
+  ensureCatStmt.run('hi', 'पॉडकास्ट', 'podcast', 'एनडी30 पॉडकास्ट, टॉक शो और विशेष साक्षात्कार', 2);
+  ensureCatStmt.run('hi', 'तकनीक', 'technology', 'तकनीक, गैजेट्स और अंतरिक्ष मिशन', 3);
+  ensureCatStmt.run('en', 'News', 'news', 'Latest breaking news from Assam, Northeast and India', 1);
+  ensureCatStmt.run('en', 'Podcast', 'podcast', 'ND30 Podcast, Talk Shows and Exclusive Interviews', 2);
+  ensureCatStmt.run('en', 'Technology', 'technology', 'Science, aerospace, gadgets and digital innovation', 3);
 
   // Seed IFTTT Connection settings
   const iftttCount = db.prepare('SELECT COUNT(*) as count FROM ifttt_connections').get().count;

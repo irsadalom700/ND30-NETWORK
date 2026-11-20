@@ -404,21 +404,65 @@ app.get('/:lang/:category/:slug', (req, res, next) => {
 
 // Category Route: /:lang/:category
 app.get('/:lang/:category', (req, res, next) => {
-  const { lang, category: catSlug } = req.params;
+  const { lang, category: rawCatSlug } = req.params;
   if (!['as', 'hi', 'en'].includes(lang)) return next();
 
-  const cat = db.prepare('SELECT * FROM categories WHERE lang_code = ? AND slug = ?').get(lang, catSlug);
+  let catSlug = rawCatSlug;
+  let cat = db.prepare('SELECT * FROM categories WHERE lang_code = ? AND slug = ?').get(lang, catSlug);
+  if (!cat && (catSlug === 'tech' || catSlug === 'technology')) {
+    catSlug = catSlug === 'tech' ? 'technology' : 'tech';
+    cat = db.prepare('SELECT * FROM categories WHERE lang_code = ? AND slug = ?').get(lang, catSlug);
+  }
   if (!cat) {
     return next();
   }
 
-  const articles = db.prepare(`
-    SELECT t.*, c.name as category_name
-    FROM article_translations t
-    LEFT JOIN categories c ON t.category_id = c.id
-    WHERE t.lang_code = ? AND t.category_id = ? AND t.status = 'published'
-    ORDER BY t.published_at DESC
-  `).all(lang, cat.id);
+  let articles = [];
+  if (catSlug === 'news') {
+    // Show all news stories or categories under news
+    articles = db.prepare(`
+      SELECT t.*, c.name as category_name, c.slug as category_slug
+      FROM article_translations t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.lang_code = ? AND t.status = 'published'
+        AND (t.category_id = ? OR c.slug IN ('news', 'assam', 'national', 'world', 'sports') OR t.category_id IS NULL)
+      ORDER BY t.published_at DESC
+    `).all(lang, cat.id);
+  } else if (catSlug === 'podcast') {
+    // Show all podcast, talk show, and video broadcast stories
+    articles = db.prepare(`
+      SELECT t.*, c.name as category_name, c.slug as category_slug
+      FROM article_translations t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.lang_code = ? AND t.status = 'published'
+        AND (
+          t.category_id = ?
+          OR c.slug IN ('podcast', 'podcasts', 'talkshow', 'talk-show', 'talk-shows')
+          OR (t.video_url IS NOT NULL AND t.video_url != '')
+          OR t.content LIKE '%facebook.com/plugins%'
+          OR LOWER(t.title) LIKE '%podcast%' OR t.title LIKE '%পডকাষ্ট%' OR t.title LIKE '%पॉडकास्ट%'
+          OR LOWER(t.title) LIKE '%talk show%' OR t.title LIKE '%টক শ্ব%' OR t.title LIKE '%टॉक शो%'
+        )
+      ORDER BY t.published_at DESC
+    `).all(lang, cat.id);
+  } else if (catSlug === 'technology' || catSlug === 'tech') {
+    articles = db.prepare(`
+      SELECT t.*, c.name as category_name, c.slug as category_slug
+      FROM article_translations t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.lang_code = ? AND t.status = 'published'
+        AND (t.category_id = ? OR c.slug IN ('tech', 'technology'))
+      ORDER BY t.published_at DESC
+    `).all(lang, cat.id);
+  } else {
+    articles = db.prepare(`
+      SELECT t.*, c.name as category_name, c.slug as category_slug
+      FROM article_translations t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.lang_code = ? AND t.category_id = ? AND t.status = 'published'
+      ORDER BY t.published_at DESC
+    `).all(lang, cat.id);
+  }
 
   const pageContent = renderCategoryPage({ category: cat, articles, lang });
   const fullHtml = renderLayout({
