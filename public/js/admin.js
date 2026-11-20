@@ -669,12 +669,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetLang = document.getElementById('fbReviewLang').value;
       const headline = document.getElementById('fbReviewHeadline').value;
       const content = document.getElementById('fbReviewContent').value;
+      const category = document.getElementById('fbReviewCategory')?.value || 'news';
 
       try {
         const res = await fetch('/api/admin/facebook/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ postId, targetLang, headline, content })
+          body: JSON.stringify({ postId, targetLang, headline, content, category })
         });
         const data = await res.json();
         if (data.success) {
@@ -853,6 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const customHeadline = document.getElementById('fbSingleHeadline')?.value.trim() || '';
           const customContent = document.getElementById('fbSingleContent')?.value.trim() || '';
           const defaultLang = document.getElementById('fbSingleLang')?.value || 'auto';
+          const category = document.getElementById('fbSingleCategory')?.value || 'news';
           const autoDraft = !!document.getElementById('fbSingleAutoDraft')?.checked;
 
           if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Importing...';
@@ -866,6 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
               customHeadline,
               customContent,
               defaultLang,
+              category,
               autoDraft
             })
           });
@@ -890,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           const defaultLang = document.getElementById('fbBulkLang')?.value || 'auto';
+          const defaultCategory = document.getElementById('fbBulkCategory')?.value || 'news';
           const autoDraft = !!document.getElementById('fbBulkAutoDraft')?.checked;
 
           if (submitAddFbLinksBtnText) submitAddFbLinksBtnText.innerText = 'Importing Links in Bulk...';
@@ -901,6 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
               mode: 'bulk',
               links: rawLinks,
               defaultLang,
+              category: defaultCategory,
               autoDraft
             })
           });

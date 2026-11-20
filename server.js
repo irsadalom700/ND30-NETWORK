@@ -1895,8 +1895,8 @@ app.post('/api/admin/facebook/sync', checkModule('facebook'), async (req, res) =
 // Approve Facebook Post from Review Queue
 app.post('/api/admin/facebook/approve', checkModule('facebook'), async (req, res) => {
   try {
-    const { postId, targetLang, headline, content } = req.body;
-    const result = await approveFacebookImport(postId, targetLang, headline, content);
+    const { postId, targetLang, headline, content, category } = req.body;
+    const result = await approveFacebookImport(postId, targetLang, headline, content, category || 'news');
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1928,7 +1928,7 @@ app.post('/api/admin/facebook/preview-link', checkModule('facebook'), async (req
 // Manually Import Facebook Link(s) - Single or Bulk
 app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req, res) => {
   try {
-    const { mode, url, links, customHeadline, customContent, defaultLang, autoDraft, pageId } = req.body;
+    const { mode, url, links, customHeadline, customContent, defaultLang, category, autoDraft, pageId } = req.body;
     
     // Check if bulk mode is specified or links array/multiline text is provided
     if (mode === 'bulk' || links || (url && url.includes('\n'))) {
@@ -1936,6 +1936,7 @@ app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req
       const result = await importMultipleFacebookLinks({
         links: linksPayload,
         defaultLang: defaultLang || 'auto',
+        defaultCategory: category || 'news',
         autoDraft: !!autoDraft,
         pageId: pageId || null
       });
@@ -1952,6 +1953,7 @@ app.post('/api/admin/facebook/import-links', checkModule('facebook'), async (req
       customHeadline: customHeadline ? customHeadline.trim() : '',
       customContent: customContent ? customContent.trim() : '',
       targetLang: defaultLang || 'auto',
+      targetCategory: category || 'news',
       autoDraft: !!autoDraft,
       pageId: pageId || null,
       isManual: true

@@ -241,6 +241,17 @@ function renderFacebookDashboard() {
         </div>
 
         <div class="form-group">
+          <label class="form-label">Assign Category *</label>
+          <select id="fbReviewCategory" class="form-control">
+            <option value="news">News (বাতৰি / समाचार)</option>
+            <option value="podcast">Podcast (পডকাষ্ট / पॉडकास्ट)</option>
+            <option value="talkshow">Talk Show (টক শ্ব’ / टॉक शो)</option>
+            <option value="technology">Technology (প্ৰযুক্তি / तकनीक)</option>
+            <option value="entertainment">Entertainment (বিনোদন / मनोरंजन)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Story Headline (Generated from post)</label>
           <input type="text" id="fbReviewHeadline" class="form-control">
         </div>
@@ -340,6 +351,17 @@ function renderFacebookDashboard() {
             </select>
           </div>
 
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="fbSingleCategory" class="form-control">
+              <option value="news">News (বাতৰি / समाचार)</option>
+              <option value="podcast">Podcast (পডকাষ্ট / पॉडकास्ट)</option>
+              <option value="talkshow">Talk Show (টক শ্ব’ / टॉक शो)</option>
+              <option value="technology">Technology (প্ৰযুক্তি / तकनीक)</option>
+              <option value="entertainment">Entertainment (বিনোদন / मनोरंजन)</option>
+            </select>
+          </div>
+
           <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-top:14px;">
             <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0;">
               <input type="checkbox" id="fbSingleAutoDraft" style="margin-top:3px;">
@@ -386,6 +408,17 @@ https://fb.watch/xyz123abc/"></textarea>
               <option value="as">Assamese – অসমীয়া (/as/)</option>
               <option value="hi">Hindi – हिंदी (/hi/)</option>
               <option value="en">English (/en/)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Default Category *</label>
+            <select id="fbBulkCategory" class="form-control">
+              <option value="news">News (বাতৰি / समाचार)</option>
+              <option value="podcast">Podcast (পডকাষ্ট / पॉडकास्ट)</option>
+              <option value="talkshow">Talk Show (টক শ্ব’ / टॉक शो)</option>
+              <option value="technology">Technology (প্ৰযুক্তি / तकनीक)</option>
+              <option value="entertainment">Entertainment (বিনোদন / मनोरंजन)</option>
             </select>
           </div>
 
@@ -557,6 +590,7 @@ https://fb.watch/xyz123abc/"></textarea>
           var headline = document.getElementById('fbSingleHeadline') ? document.getElementById('fbSingleHeadline').value.trim() : '';
           var content = document.getElementById('fbSingleContent') ? document.getElementById('fbSingleContent').value.trim() : '';
           var lang = document.getElementById('fbSingleLang') ? document.getElementById('fbSingleLang').value : 'auto';
+          var category = document.getElementById('fbSingleCategory') ? document.getElementById('fbSingleCategory').value : 'news';
           var autoDraft = document.getElementById('fbSingleAutoDraft') ? document.getElementById('fbSingleAutoDraft').checked : false;
 
           if (btnText) btnText.innerText = 'Importing...';
@@ -570,6 +604,7 @@ https://fb.watch/xyz123abc/"></textarea>
               customHeadline: headline,
               customContent: content,
               defaultLang: lang,
+              category: category,
               autoDraft: autoDraft
             })
           });
@@ -595,6 +630,7 @@ https://fb.watch/xyz123abc/"></textarea>
           }
 
           var bulkLang = document.getElementById('fbBulkLang') ? document.getElementById('fbBulkLang').value : 'auto';
+          var bulkCategory = document.getElementById('fbBulkCategory') ? document.getElementById('fbBulkCategory').value : 'news';
           var bulkAutoDraft = document.getElementById('fbBulkAutoDraft') ? document.getElementById('fbBulkAutoDraft').checked : false;
 
           if (btnText) btnText.innerText = 'Importing Links in Bulk...';
@@ -606,6 +642,7 @@ https://fb.watch/xyz123abc/"></textarea>
               mode: 'bulk',
               links: rawLinks,
               defaultLang: bulkLang,
+              category: bulkCategory,
               autoDraft: bulkAutoDraft
             })
           });

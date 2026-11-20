@@ -291,6 +291,7 @@ async function importSingleFacebookLink({
   customHeadline = '',
   customContent = '',
   targetLang = 'auto',
+  targetCategory = 'news',
   autoDraft = false,
   pageId = null,
   isManual = true
@@ -391,13 +392,14 @@ async function importSingleFacebookLink({
 
   // 6. If autoDraft is enabled, approve into multi-language drafts immediately
   if (autoDraft) {
-    const approval = await approveFacebookImport(importedId, suggestedLang, finalHeadline, finalContent);
+    const approval = await approveFacebookImport(importedId, suggestedLang, finalHeadline, finalContent, targetCategory);
     return {
       success: true,
       id: importedId,
       postId: canonicalPostId,
       url: canonicalPostUrl,
       mediaType: canonicalMediaType,
+      category: targetCategory,
       status: 'imported_draft',
       clusterId: approval.clusterId,
       language: suggestedLang,
@@ -425,6 +427,7 @@ async function importSingleFacebookLink({
 async function importMultipleFacebookLinks({
   links,
   defaultLang = 'auto',
+  defaultCategory = 'news',
   autoDraft = false,
   pageId = null
 }) {
@@ -465,6 +468,7 @@ async function importMultipleFacebookLinks({
       const res = await importSingleFacebookLink({
         url,
         targetLang: defaultLang,
+        targetCategory: defaultCategory,
         autoDraft,
         pageId,
         isManual: true
@@ -758,7 +762,7 @@ function checkForAutomationLoop(message, fbPostId) {
  * Automatically generates draft translations for all 3 languages (Assamese, Hindi, English).
  * If the post is a video or reel, automatically embeds the Facebook video player into the article content.
  */
-async function approveFacebookImport(importedPostId, targetLang, editedHeadline, editedContent) {
+async function approveFacebookImport(importedPostId, targetLang, editedHeadline, editedContent, targetCategorySlug = 'news') {
   const post = db.prepare('SELECT * FROM facebook_imported_posts WHERE id = ?').get(importedPostId);
   if (!post) {
     throw new Error('Imported post record not found');
@@ -782,7 +786,9 @@ async function approveFacebookImport(importedPostId, targetLang, editedHeadline,
     slug = `${baseSlug.slice(0, 70)}-${uuidv4().slice(0, 6)}`;
   }
 
-  const cat = db.prepare('SELECT id, slug FROM categories WHERE lang_code = ? LIMIT 1').get(lang);
+  const catSlug = targetCategorySlug || 'news';
+  const cat = db.prepare('SELECT id, slug FROM categories WHERE lang_code = ? AND slug = ?').get(lang, catSlug)
+    || db.prepare('SELECT id, slug FROM categories WHERE lang_code = ? LIMIT 1').get(lang);
 
   // If this post is a video or reel and has a valid post_url, embed the Facebook video/reel player!
   let videoEmbedHtml = '';
